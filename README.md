@@ -1,9 +1,6 @@
 # Book_ReactNext
 ## Tutorial of React, Component-Orientation, Next.js for SPA, SSR, SSG and so on.
 
-## TS Playground(REPLツール)
-+ https://www.typescriptlang.org/play
-
 ## TypeScriptとReact/Next.jsで作る実践アプリケーション開発
 + 書籍　https://gihyo.jp/book/2022/978-4-297-12916-3
 + サポートページ https://gihyo.jp/book/2022/978-4-297-12916-3/support
@@ -17,9 +14,10 @@
 + TypeScript v5.1.6
 + @types/node v20.4.1
 
-## TypeScriptとReact/Next.jsで作る実践アプリケーション開発
-### 目次
+### TS Playground(REPLツール)
++ https://www.typescriptlang.org/play
 
+### 目次
 
 #### 1 Next.jsとTypeScriptによるモダン開発
 + 1.1 Next.jsとTypeScript
