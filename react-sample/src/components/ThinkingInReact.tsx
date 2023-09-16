@@ -1,5 +1,15 @@
 // Reactによるコンポーネント指向UI設計の例題
-import React, { useState, useReducer, useCallback, useMemo, memo, useContext, useEffect, useRef, useImperativeHandle } from 'react';
+import React, { 
+    useState, 
+    useReducer, 
+    useCallback, 
+    useMemo, 
+    memo, 
+    useContext, 
+    useEffect, 
+    useRef, 
+    useImperativeHandle, 
+    useDebugValue } from 'react';
 
 // JSON object
 const PRODUCTS = [
