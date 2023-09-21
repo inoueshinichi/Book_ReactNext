@@ -1,0 +1,90 @@
+<!-- index.html -->
+<html>
+    <body>
+        <div id="app"></div>
+
+        <!-- 生DOMを操作 -->
+        <!-- <script type="text/javascript">
+            // Select the div element with 'app'
+            const app = document.getElementById('app');
+
+            // Create a new H1 element
+            const header = document.createElement('h1');
+
+            // Create a new text node for the H1 element
+            const headerContent = document.createTextNode(
+                'Develop. Preview. Ship. ⛵',
+            );
+
+            // Append the text to the H1 element
+            header.appendChild(headerContent);
+
+            // Place the H1 element inside the div
+            app.appendChild(header);
+        </script> -->
+
+        <!-- Reactの仮想DOMを操作 -->
+        <!-- React DCM -->
+        <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+        <!-- Babel DCM  -->
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        <!-- <script type="text/javascript"> -->
+        <script type="text/jsx">
+            const app = document.getElementById('app');
+
+            function createTitle(title) {
+                if (title) {
+                    return title;
+                } else {
+                    return 'Default title';
+                }
+            }
+            
+            function Header({ title }) {
+                console.log(title);   
+                // return (<h1>Develop. Preview. Ship. ⛵</h1>);
+                // return <h1>{`Cool ${title}`}</h1>;
+                return <h1>{createTitle(title)}</h1>;
+            }
+
+            const names = ['Ada Lovelace', 'Grace Hopper', 'Margaret Hamilton'];
+
+            
+            function HomePage() {
+                // state
+                const [text, setText] = React.useState("");
+
+                // callback
+                function handleAddText() {
+                    setText('I will get a new job!');
+                }
+
+                return (
+                    <>
+                        <div>
+                            <Header title="React 💙" />
+                            <Header title="A new title" />
+                        </div>
+                        {/* 動的なリスト作成 */}
+                        <div>
+                            <ul>
+                                {names.map((name) => (
+                                    <li key={name}>{name}</li>
+                                ))}
+                            </ul>
+                        </div>
+                       {/* イベントボタン */}
+                       <button id="like-button" onClick={handleAddText}>Like</button>
+                       {/*イベントボタンで状態が変化するテキスト*/}
+                       <p>{text}</p>
+                    </>
+                );
+            }
+
+            ReactDOM.render(<HomePage />, app);
+        </script>
+    </body>
+</html>
+
