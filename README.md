@@ -21,3 +21,12 @@
 
 ### いまどきのJSプログラマーのためのNode.jsとReactアプリケーション開発テクニック
 + 書籍 https://www.socym.co.jp/book/1114
+
+
+## Babel(もう使わないけど一応)
+
+### ES2020をES6(ES2015)以前のプログラムに変換
+
+#### Babelインストール
++ `$ npm install --save-dev babel-cli babel-preset-es2020`
++ `$ npx babel --presets=es2020 {path/to/your_es2020.js} [--watch|-w]  [--out-file|-o] {path/to/your_compiled.js}`
