@@ -1,12 +1,12 @@
 <!-- index.html -->
 <html>
     <body>
-        <div id="app"></div>
-
+        <div id="app1"></div>
+        
         <!-- 生DOMを操作 -->
         <!-- <script type="text/javascript">
-            // Select the div element with 'app'
-            const app = document.getElementById('app');
+            // Select the div element with 'app1'
+            const app1 = document.getElementById('app1');
 
             // Create a new H1 element
             const header = document.createElement('h1');
@@ -20,19 +20,21 @@
             header.appendChild(headerContent);
 
             // Place the H1 element inside the div
-            app.appendChild(header);
+            app1.appendChild(header);
         </script> -->
+
+        <!-- ライブラリの読み込み -->
 
         <!-- Reactの仮想DOMを操作 -->
         <!-- React DCM -->
-        <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         <!-- Babel DCM  -->
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
         <!-- <script type="text/javascript"> -->
-        <script type="text/jsx">
-            const app = document.getElementById('app');
+        <script type="text/jsx" defer>
+            const app1 = document.getElementById('app1');
 
             function createTitle(title) {
                 if (title) {
@@ -83,8 +85,67 @@
                 );
             }
 
-            ReactDOM.render(<HomePage />, app/*DOM*/);
+            ReactDOM.render(<HomePage />, app1/*DOM*/);
         </script>
+
+        <div id="app2"></div>
+
+        <!-- Reactの例2 -->
+        <script type="text/jsx" defer>
+            const app2 = document.getElementById('app2');
+            const msg = getGreeting();
+            
+            function getGreeting() {
+                // ランダムな値を得る
+                const r = Math.floor(Math.random() * 3);
+                // 値に応じてメッセージを返す
+                if (r == 0) return <p>今日も頑張りましょう。</p>
+                if (r == 1) return <p>こんにちは。</p>
+                if (r == 2) return <p>晴天です。</p>
+            }
+
+            ReactDOM.render(msg, app2);
+
+        </script>
+
+        <div id="app3"></div>
+
+        <!-- Reactの例3 -->
+        <script type="text/jsx" defer>
+            const item = "SDカード";
+            const value = 1200;
+            // HTMLタグの中に変数を埋め込む
+            const msg = <h1>{item} - {value}円</h1>
+
+            const app3 = document.getElementById("app3");
+            ReactDOM.render(msg, app3);
+        </script>
+
+        <div id="app4"></div>
+
+        <!-- Reactの例4 -->
+        <script type="text/jsx" defer>
+            const title = "書道";
+            const imgUri = "https://hino-shakyo.com/user/wp-content/uploads/2019/08/2020_01-54.jpg";
+            // JSXで要素を定義
+            const msg = (
+                <div>
+                    <h1>{title}</h1>
+                    <p><img src={imgUri} width={256} height={256}/></p>
+                </div>
+            );
+
+            const app4 = document.getElementById("app4");
+            ReactDOM.render(msg, app4);
+        </script>
+
+        <!-- Reactの例5 -->
+        <div id="app5"></div>
+
+        <script type="text/jsx" defer>
+
+        </script>
+
     </body>
 </html>
 
