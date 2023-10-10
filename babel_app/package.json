@@ -1,12 +1,12 @@
 {
-  "name": "nodejs_app",
+  "name": "babel_app",
   "version": "1.0.0",
   "private": true,
   "description": "",
   "scripts": {
-    "bmi_build": "npx babel ./src/babel_compile_bmi.js -o ./src/babel_compile_bmi.out.js",
+    "bmi_build": "npx babel ./src/babel_compile_bmi.js --source-maps -o ./src/babel_compile_bmi.out.js",
     "bmi_start": "node ./src/babel_compile_bmi.out.js",
-    "bmi_watch": "npx babel ./src/babel_compile_bmi.js --watch --out-file ./src/babel_compile_bmi.out.js",
+    "bmi_watch": "npx babel ./src/babel_compile_bmi.js --watch --source-maps --out-file ./src/babel_compile_bmi.out.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

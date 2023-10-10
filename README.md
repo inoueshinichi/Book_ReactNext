@@ -29,4 +29,4 @@
 
 #### Babelインストール
 + `$ npm install --save-dev babel-cli babel-preset-es2020`
-+ `$ npx babel --presets=es2020 {path/to/your_es2020.js} [--watch|-w]  [--out-file|-o] {path/to/your_compiled.js}`
++ `$ npx babel --presets=es2020 {path/to/your_es2020.js} [--watch|-w]  [--out-file|-o] --source-maps {path/to/your_compiled.js}`

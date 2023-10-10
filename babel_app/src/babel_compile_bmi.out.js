@@ -26,3 +26,5 @@ class BMI {
 // テスト
 var bmi = new BMI(164.4, 61.0);
 bmi.print();
+
+//# sourceMappingURL=babel_compile_bmi.out.js.map
