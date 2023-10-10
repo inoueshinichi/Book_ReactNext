@@ -139,11 +139,45 @@
             ReactDOM.render(msg, app4);
         </script>
 
-        <!-- Reactの例5 -->
         <div id="app5"></div>
 
+        <!-- Reactの例5 -->
         <script type="text/jsx" defer>
+            const app5 = document.getElementById("app5");
+            
+            function getDOM() {
+                // CSS1 : 通常のCSSスタイル
+                const css1 = {
+                    "color": 'red',
+                    "background-color": '#f0f0ff',
+                    "font-size": '2em'
+                };
 
+                // CSS2 : JSスタイル
+                const css2 = {
+                    color: 'blue',
+                    backgroundColor: '#fff0f0',
+                    fontSize: '2em'
+                };
+
+                return (
+                    <>
+                        <p style={css1}>探すのに時があり</p>
+                        <p style={css2}>捨てるのに時がある</p>
+                    </>
+                );
+            }
+
+            ReactDOM.render(getDOM(), app5);
+        </script>
+
+        <div id="app6"></div>
+
+        <script type="text/jsx" defer>
+            const app6 = document.getElementById("app6");
+            const value = "<<< 豚に真珠、猫に小判 >>>";
+            const jsxElem = <h2>{value}</h2>;
+            ReactDOM.render(jsxElem, app6);
         </script>
 
     </body>
