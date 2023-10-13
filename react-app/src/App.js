@@ -1,18 +1,17 @@
-import logo from './logo.svg';
-import './App.css';
-
 import React, { useState } from "react";
 import ReactDom from "react-dom/client";
 
-function App() { 
-  const [text, setText] = useState("");
+import AppContextAPI from "./AppContextAPI";
+import AppUseReducer from "./AppUseReducer";
 
-  return (
-    <div className="App">
-      <button className="track-button" onClick={() => setText("hello track")}>Click me!</button>
-      <p>{text}</p>
-    </div>
-  );
+
+function App() {
+    return (
+        <>
+            <AppContextAPI />
+            <AppUseReducer />
+        </>
+    );
 }
 
 export default App;

@@ -1,10 +1,212 @@
 <!-- index.html -->
 <html>
     <body>
+        <!-- ライブラリの読み込み(ネットワーク経由) -->
+        
+        <!-- Reactの仮想DOMを操作 -->
+        <!-- React DCM -->
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <!-- Babel DCM  -->
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        
+        <!-- SD React雑誌 例題1 -->
+        <div id="root1">
+            <!-- HTMLは宣言的 -->
+            <!-- <div class="message">
+                こんにちは<span class="name">太郎</span>さん!
+            </div> -->
+        </div>
+
+        <!-- JavaScriptのDOM操作は命令的 -->
+        <script type="text/javascript" defer>
+            const span = document.createElement("span");
+            span.classList.add('name');
+            span.textContent = "太郎";
+            const div = document.createElement('div');
+            div.classList.add("message");
+            div.appendChild(document.createTextNode("こんにちは"));
+            div.appendChild(span);
+            div.appendChild(document.createTextNode("さん!"));
+            div.appendChild(document.createElement('hr'));
+
+            // const hr_root1 = document.querySelector("#root1 hr");
+            const root1 = document.getElementById('root1');
+            root1.appendChild(div);
+            
+        </script>
+
+        <!-- SD React雑誌 例題2 -->
+        <div id="root2"></div>
+        <hr>
+        
+        <script type="text/jsx" defer>
+
+            // クラス構文で定義するReactコンポーネント
+            class ToDoItem extends React.Component {
+                render() {
+                    const { key, item } = this.props;
+                    return (
+                        <li>
+                            <label>
+                                <input type="checkbox" checked={item.done} />
+                                {item.name}
+                            </label>
+                        </li>
+                    );
+                }
+            }
+
+            /*function ToDoItem(props) {
+                return (
+                    <li>
+                        <label>
+                            <input type="checkbox" checked={props.item.done} />
+                            {props.item.name}
+                        </label>
+                    </li>
+                );
+            }*/
+
+            function ToDoList(props) {
+                return (
+                    <ul className="todo-list">
+                        {props.items.map((item) => (
+                           <ToDoItem key={item.id} item={item} />
+                        ))}
+                    </ul>
+                );
+            }
+
+            function App(props) {
+                const items = [
+                    { id: 1, name: "ダンスのレッスン", done: false },
+                    { id: 2, name: "営業活動", done: true },
+                    { id: 3, name: "雑誌のお仕事", done: false },
+                ];
+
+                return (
+                    <div>
+                        <h1>ToDoモック</h1>
+                        <ToDoList items={items} />
+                    </div>
+                );
+            }
+
+            ReactDOM.render(<App />, document.getElementById('root2'));
+        </script>
+
+        <!-- SD React雑誌 例題3 -->
+        <div id="root3"></div>
+        <br>
+
+        <script type="text/jsx" defer>
+            function Counter(props) {
+                // ステートフックを呼び出して、stateと更新用関数を取得する
+                const [count, setCount] = React.useState(0);
+                return (
+                    <div>
+                        <button onClick={() => setCount(count + 1)}>Add</button>
+                        クリック数: {count}回
+                    </div>
+                );
+            }
+
+            function App(props) {
+                return (
+                    <div>
+                        <Counter />
+                        <Counter />
+                        <Counter />
+                    </div>
+                );
+            }
+
+            ReactDOM.render(<App />, document.getElementById('root3'));
+        </script>
+
+        <!-- SD React雑誌 例題4 -->
+        <div id="root4"></div>
+        <br>
+
+        <script type="text/jsx" defer>
+
+            function Counter(props) {
+                // stateではなくpropsからカウントを受ける
+                const { count, setCount } = props;
+                return (
+                    <div>
+                        <button onClick={() => setCount(count + 1)}>Add</button>
+                        クリック数: {count}個
+                    </div>
+                );
+            }
+
+            function App() {
+                // カウンタ間で共有するstate
+                const [count, setCount] = React.useState(0);
+                return (
+                    <div>
+                        <Counter count={count} setCount={setCount} />
+                        <Counter count={count} setCount={setCount} />
+                        <Counter count={count} setCount={setCount} />
+                    </div>
+                );
+            }
+
+            ReactDOM.render(<App />, document.getElementById('root4'));
+        </script>
+
+        <!-- SD React雑誌 例題5 -->
+        <div id="root5"></div>
+        <br>
+
+        <script type="text/jsx" defer>
+
+            // canvas要素に対応する円グラフを記述
+            function Pie(props) {
+                const { percent, color = "#ff0000" } = props;
+
+                // レンダーしたcanvas要素への参照を取得
+                const canvasRef = React.useRef();
+
+                React.useEffect(() => {
+                    // レンダー後に毎回コールしてもらう関数を登録する
+                    const ctx = canvasRef.current.getContext('2d');
+                    ctx.clearRect(0,0,100,100);
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(50,50);
+                    ctx.arc(50,50,50,0, (percent/100) * Math.PI * 2, false);
+                    ctx.lineTo(50,50);
+                    ctx.fill();
+                });
+
+                return <canvas ref={canvasRef} width={100} height={100} />;
+            }
+
+            function App() {
+                return <Pie percent={80} />;
+            }
+
+            ReactDOM.render(<App />, document.getElementById('root5'));
+        </script>
+
+        <!-- SD React雑誌 例題6 状態管理 -->
+        <div id="root6"></div>
+        <br>
+
+        <script type="text/jsx" defer>
+            
+        </script>
+
+        
+        <!-- 生DOMの操作とReact要素の操作の比較 -->
         <div id="app1"></div>
+        <hr>
         
         <!-- 生DOMを操作 -->
-        <!-- <script type="text/javascript">
+        <!-- <script type="text/javascript" defer>
             // Select the div element with 'app1'
             const app1 = document.getElementById('app1');
 
@@ -23,14 +225,7 @@
             app1.appendChild(header);
         </script> -->
 
-        <!-- ライブラリの読み込み -->
-
-        <!-- Reactの仮想DOMを操作 -->
-        <!-- React DCM -->
-        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-        <!-- Babel DCM  -->
-        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        
 
         <!-- <script type="text/javascript"> -->
         <script type="text/jsx" defer>
@@ -89,6 +284,7 @@
         </script>
 
         <div id="app2"></div>
+        <hr>
 
         <!-- Reactの例2 -->
         <script type="text/jsx" defer>
@@ -109,6 +305,7 @@
         </script>
 
         <div id="app3"></div>
+        <hr>
 
         <!-- Reactの例3 -->
         <script type="text/jsx" defer>
@@ -122,6 +319,7 @@
         </script>
 
         <div id="app4"></div>
+        <hr>
 
         <!-- Reactの例4 -->
         <script type="text/jsx" defer>
@@ -140,6 +338,7 @@
         </script>
 
         <div id="app5"></div>
+        <hr>
 
         <!-- Reactの例5 -->
         <script type="text/jsx" defer>
@@ -172,12 +371,45 @@
         </script>
 
         <div id="app6"></div>
+        <hr>
 
         <script type="text/jsx" defer>
             const app6 = document.getElementById("app6");
             const value = "<<< 豚に真珠、猫に小判 >>>";
             const jsxElem = <h2>{value}</h2>;
             ReactDOM.render(jsxElem, app6);
+        </script>
+
+        <div id="app7"></div>
+        <hr>
+
+        <script type="text/jsx" defer>
+            const app7 = document.getElementById('app7');
+
+            // コンポーネントを利用
+            const dom = <div>
+                <PhotoText image="pic1" label="南国の浜辺でゆったり"/>
+                <PhotoText image="pic2" label="南国の海は開放的"/>
+                <PhotoText image="pic3" label="海、海、海、青い海"/>
+            </div>;
+
+            ReactDOM.render(dom, app7);
+
+            function PhotoText(props) {
+                const url = "img/" + props.image + ".jpeg";
+                const label = props.label;
+                const boxStyle = {
+                    border: "1px solid silver",
+                    margin: "8px",
+                    padding: "4px"
+                };
+                return (
+                    <div style={borderStyle}>
+                        <img src={url} width="128"/>
+                        <span> {label} </span>
+                    </div>
+                );
+            }
         </script>
 
     </body>
