@@ -125,6 +125,247 @@
         ReactDOM.render(dom, document.getElementById('root2'));
     </script>
 
+    <div id="root3"></div>
+    <hr>
+
+    <script type="text/jsx" defer>
+        // クラスでPhotoTextコンポーネントを定義
+        class PhotoText extends React.Component {
+            getImageURL() {
+                const id = this.props.image;
+                const url = "static/images/" + id + ".JPG";
+                return url;
+            }
+
+            render() {
+                const label = this.props.label;
+                const url = this.getImageURL();
+                const boxStyle = {
+                    border: "1px solid silver",
+                    margin: "8px",
+                    padding: "4px"
+                };
+
+                return (
+                    <div style={boxStyle}>
+                        <img src={url} width="128"/>
+                        <span>{label}</span>
+                    </div>
+                );
+            }
+        }
+
+        // コンポーネント
+        const dom = <div>
+            <PhotoText image="picture1" label="画像1" />
+            <PhotoText image="picture2" label="画像2" />
+        </div>;
+
+        ReactDOM.render(dom, document.getElementById('root3'));
+    </script>
+
+    <div id="root4"></div>
+    <hr>
+
+    <!-- リストコンポーネント -->
+    <script type="text/jsx" defer>
+        // リストコンポーネント
+        class RList extends React.Component {
+            render() {
+                // items属性に指定した値から配列itemsを利用
+                const items = this.props.items.split(',');
+                // アイテム一覧からli要素を作成
+                const itemObj = items.map(
+                    (e) => {
+                        return <li key={e}>{e}</li>
+                    }
+                );
+
+                // タイトル
+                let title = this.props.title;
+                if (!title) title = "LIST";
+
+                 // 描画内容を返す
+                 return (
+                    <div>
+                        <h3>{title}</h3>
+                        <ul>{itemObj}</ul>
+                    </div>
+                 );
+            }
+        }
+
+        const dom = (
+            <div>
+                <RList title="Colors" items="Red,Blue,Green,White,Black" />
+                <RList title="果物" items="バナナ,リング,いちご" />
+            </div>
+        );
+
+        // コンポーネントを表示する
+        ReactDOM.render(
+            dom,
+            document.getElementById("root4")
+        );
+    </script>
+
+    <div id="root5"></div>
+    <hr>
+
+    <script type="text/jsx" defer>
+        // アロー演算子でコンポーネント定義
+        const TitleParts = (props) => (
+            <div style={{ backgroundColor: 'red', color: 'white' }}>
+                <h3>{props.title}</h3>
+            </div>
+        );
+
+        const ContentParts = (props) => (
+            <div style={{ border: '1px solid blue', margin: 15 }}>
+                <div>あらすじ: {props.body}</div>
+            </div> 
+        );
+
+        // メイン
+        const Book = (props) => (
+            <div>
+                <TitleParts title={props.title} />
+                <ContentParts body={props.body} />
+            </div>
+        );
+
+        ReactDOM.render((
+            <>
+                <Book title="三国志" body="昔の中国の話" />
+                <Book title="民数記" body="昔のイスラエルの話" />
+                <Book title="西遊記" body="サルが活躍する話" />
+            </>),
+            document.getElementById("root5")
+        );
+    </script>
+
+    <div id="root6"></div>
+    <hr>
+
+    <!-- 時計コンポーネント -->
+    <script type="text/jsx" defer>
+        // 状態を持つ時計コンポーネント
+        class SClock extends React.Component {
+            constructor(props) {
+                super(props);
+                // 状態の初期化
+                this.state = {
+                    now: (new Date())
+                };
+
+                // 毎秒状態を更新する
+                setInterval(e => {
+                    this.setState({ now: (new Date())});
+                }, 1000);
+            }
+
+            render() {
+                const now = this.state.now;
+                const hh = this.fmt(now.getHours());
+                const mm = this.fmt(now.getMinutes());
+                const ss = this.fmt(now.getSeconds());
+                return (<div>{hh}:{mm}:{ss}</div>);
+            }
+
+            fmt(v) {
+                const s = "00" + v;
+                return s.substr(s.length - 2, 2);
+            }
+        }
+
+        ReactDOM.render(
+            <div><SClock /></div>,
+            document.getElementById("root6")
+        );
+    </script>
+
+    <div id="root7"></div>
+    <hr>
+
+    <!-- イベントの仕組みと実装 -->
+    <script type="text/jsx" defer>
+        const Hello = (props) => {
+            // イベントを定義
+            const handleClick = (e) => window.alert("こんにちは");
+            return <div onClick={handleClick}>Click Me</div>;
+        };
+
+        ReactDOM.render(<Hello />, document.getElementById('root7'));
+    </script>
+
+    <div id="root8"></div>
+    <hr>
+
+    <script type="text/jsx" defer>
+        class Hello extends React.Component {
+            constructor(props) {
+                super(props);
+                // イベントハンドラをthisで結びつける
+                this.handleClick = this.handleClick.bind(this);
+            }
+
+            handleClick(e) {
+                const name = this.props.name;
+                window.alert(`こんにちは, ${name}さん!`);
+            }
+
+            render() {
+                return (
+                    <div onClick={this.handleClick}>Click Me with bind</div>
+                );
+            }
+        }
+
+        ReactDOM.render(<Hello name="しんいち"/>, document.getElementById('root8'));
+    </script>
+
+    <div id="root9"></div>
+    <hr>
+
+    <script type="text/jsx" defer>
+        class CBox extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { checked: false };
+            }
+
+            render() {
+                // 未チェックの状態
+                let mark = '▢';
+                let bstyle = { fontWeight: 'normal' };
+                // チェックされているか
+                if (this.state.checked) {
+                    mark = '■';
+                    bstyle = { fontWeight: 'bold' };
+                }
+
+                // クリックしたときのイベントを指定
+                const handleClick = (e) => {
+                    const newValue = !this.state.checked;
+                    this.setState({ checked: newValue });
+                };
+
+                return (
+                    <div onClick={handleClick} style={bstyle}>{mark} {this.props.label}</div>
+                );
+            }
+        }
+
+        const dom = <div>
+            <CBox label="Apple" />
+            <CBox label="Banana" />
+            <CBox label="Orange" />
+            <CBox label="Mango" />
+        </div>;
+
+        ReactDOM.render(dom, document.getElementById("root9"));
+    </script>
+
     <!-- Footer -->
     <footer class="footer">
         <nav class="site-menu">
