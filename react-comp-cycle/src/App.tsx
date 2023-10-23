@@ -4,6 +4,7 @@ import './App.css';
 
 import Cycle from './components/Cylcle';
 import StopWatch from './components/StopWatch';
+import ItemCart from './components/ItemCart';
 
 function App() {
   return (
@@ -17,6 +18,8 @@ function App() {
       <Cycle />
       <hr />
       <StopWatch />
+      <hr />
+      <ItemCart />
     </div>
   );
 }
