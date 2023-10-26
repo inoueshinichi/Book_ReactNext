@@ -516,6 +516,88 @@
                 return v.substr(v.length - 2, 2);
             }
         </script>
+
+        <div id="app11" style="margin: 20px;"></div>
+        <div id="info"></div>
+        <hr>
+
+        <script type="text/jsx" defer>
+
+            // 色選択コンポーネント
+            class ColorBox extends React.Component {
+                constructor(props) {
+                    super(props);
+                    this.state = {
+                        index: 0,
+                        colors: ['red', 'blue', 'green', 'yellow', 'black']
+                    };
+                }
+
+                render() {
+                    // stateから状態を取り出す
+                    const colors = this.state.colors;
+                    const index = this.state.index;
+
+                    // 現在の色選択
+                    const cur = (index >= 0) ? colors[index] : "";
+
+                    // 各色毎にspan要素を生成する(コンポーネントリスト)
+                    const items = colors.map((c) => {
+                        // 選択枠なら色をつける
+                        let bs = '1px solid white';
+                        if (c === cur) {
+                            bs = '1px solid black';
+                        }
+
+                        // 色毎のスタイルを設定
+                        const cstyle = {
+                            color: c,
+                            border: bs,
+                            fontSize: "50px"
+                        };
+
+                        // 色をクリックした時の処理
+                        const clickHandler = (e) => {
+                            const c = e.target.style.color; // e.g 'red'
+                            const i = this.state.colors.indexOf(c); // e.g 1
+                            // 状態を更新する
+                            this.setState({index: i});
+
+                            // 上位コンポーネントのコールバック
+                            if (this.props.onColorChange) {
+                                this.props.onColorChange({color: c});
+                            }
+                        }
+
+                        // span要素で色のタイルを返す
+                        return (
+                            <span onClick={clickHandler} style={cstyle}>■</span>
+                        );
+                    });
+
+                    // 描画
+                    return (
+                        <div>{items}</div>
+                    );
+                }
+            }
+
+            // ReactでDOMを書き換える
+            const colorHandler = (e) => {
+                ReactDOM.render(
+                    <span>{e.color}</span>,
+                    document.getElementById('info')
+                );
+            };
+
+            const dom = <div>
+                <ColorBox id="cb" onColorChange={colorHandler} />
+            </div>;
+
+            ReactDOM.render(dom, document.getElementById('app11'));
+        </script>
+
+
     </body>
 </html>
 
