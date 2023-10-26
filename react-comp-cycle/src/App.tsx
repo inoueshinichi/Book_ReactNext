@@ -5,6 +5,10 @@ import './App.css';
 import Cycle from './components/Cylcle';
 import StopWatch from './components/StopWatch';
 import ItemCart from './components/ItemCart';
+import SimpleForm from './components/SimpleForm';
+import NumberForm from './components/NumberForm';
+import MultiForm from './components/MultiForm';
+import Inch2CmForm from './components/Inch2CmForm';
 
 function App() {
   return (
@@ -20,6 +24,15 @@ function App() {
       <StopWatch />
       <hr />
       <ItemCart />
+      <hr />
+      <SimpleForm />
+      <hr />
+      <NumberForm />
+      <hr />
+      <MultiForm />
+      <hr />
+      <Inch2CmForm />
+      <hr />
     </div>
   );
 }
