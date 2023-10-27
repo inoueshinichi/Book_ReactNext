@@ -9,6 +9,9 @@ import SimpleForm from './components/SimpleForm';
 import NumberForm from './components/NumberForm';
 import MultiForm from './components/MultiForm';
 import Inch2CmForm from './components/Inch2CmForm';
+import CustomForm from './components/CustomForm';
+import TextForm from './components/TextForm';
+import CBoxForm from './components/CBoxForm';
 
 function App() {
   return (
@@ -33,6 +36,13 @@ function App() {
       <hr />
       <Inch2CmForm />
       <hr />
+      <CustomForm />
+      <hr />
+      <TextForm />
+      <hr />
+      <CBoxForm />
+      <hr />
+
     </div>
   );
 }
