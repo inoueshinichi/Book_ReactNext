@@ -12,6 +12,9 @@ import Inch2CmForm from './components/Inch2CmForm';
 import CustomForm from './components/CustomForm';
 import TextForm from './components/TextForm';
 import CBoxForm from './components/CBoxForm';
+import TextAreaForm from './components/TextAreaForm';
+import RadioForm from './components/RadioForm';
+import SelectForm from './components/SelectForm';
 
 function App() {
   return (
@@ -42,7 +45,12 @@ function App() {
       <hr />
       <CBoxForm />
       <hr />
-
+      <TextAreaForm />
+      <hr />
+      <RadioForm items={['チョコ', '梅干し', 'ラムネ']} />
+      <hr />
+      <SelectForm items={['チョコ', '梅干し', 'ラムネ']} value='ラムネ' />
+      <hr />
     </div>
   );
 }
