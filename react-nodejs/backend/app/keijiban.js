@@ -55,7 +55,7 @@ redis.once('ready', async () => {
 
         // サーバー起動
         srvApp.listen(PORT, () => {
-            console.log("[Start] redis_server");
+            console.log(`[Start] redis_server:${PORT} with redis: ${REDIS_PORT}`);
         });
     } catch (err) {
         console.error(err);
@@ -65,13 +65,24 @@ redis.once('ready', async () => {
 
 /* ----------- Express Settings ----------- */
 const express = require("express");
-const PORT = 3000;
+const PORT = 4000;
 
 // サーバー用インスタンスを作成
 const srvApp = express();
 
+// クロスオリジンのパーミッション
+const allowCORS = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*'); // すべてのオリジンを許可
+    
+    if (req.method == 'OPTIONS') {
+        return res.status(200).send();
+    } {
+        next();
+    }
+};
+
 // 非同期なエラーは包括的エラーハンドリングでキャッチできない
-srvApp.get("/async/err", async (req, res) => {
+srvApp.get("/async/err", allowCORS, async (req, res) => {
     throw new Error("非同期エラー"); // プロセス内でキャッチできないので、サーバーが落ちる.
     console.log("async errルート");
     res.status(200).send("async errルート");
@@ -97,14 +108,17 @@ redis.on('error', (err) => {
 srvApp.use('/public', express.static('./public'));
 
 // ルートへのアクセスを/publicにリダイレクトする
-srvApp.get('/', (req, res) => {
+srvApp.get('/', allowCORS, (req, res) => {
     // res.status(200).send('Hello Redis\n');
     res.redirect(302, '/public');
+
+    console.log('GETメソッドを受け取りました.');
+    console.log('-----');
 });
 
 
 // ログの取得
-srvApp.get('/api/getItems', async (req, res) => {
+srvApp.get('/api/getItems', allowCORS, async (req, res) => {
     // データベースの書き込み時刻でソートして一覧を返す
     try {
         // Redisからレコードを取り出す
@@ -133,21 +147,35 @@ srvApp.get('/api/getItems', async (req, res) => {
     } catch(err) {
         res.status(500).send('[ERROR] Internal Server: Failed to read all records to redis db.\n');
     }
+
+    console.log('GETメソッドを受け取りました.');
+    console.log('-----');
 });
 
 // 新規ログを書き込む
-srvApp.get('/api/write', (req, res) => {
+srvApp.post('/api/write', allowCORS, (req, res) => {
     // クエリURLパラメータ
     const query = req.query;
 
     try {
         // URLパラメータをDB(Redis)に書き込む
         // レコード: (名前, メッセージ, タイムスタンプ)
-        redis.set((new Date()).getTime().toString(), JSON.stringify({ name: query.name, msg: query.body }));
+        const newRecord = {
+            name: query.name,
+            msg: query.msg
+        };
+        redis.set(Date.now().toString(), JSON.stringify(newRecord));
+        
+        console.log(`[Post] to redis DB: name=${query.name}, msg=${query.msg}`);
+        res.status(200).send();
+
     } catch(err) {
         console.error(`[Error] write record to redis db. Query: ${query.name}=${query.body}`);
         res.status(500).send('[ERROR] Internal Server: Failed to write record to redis db.\n');
     }
+
+    console.log('POSTメソッドを受け取りました.');
+    console.log('-----');
 });
 
 // Redisに格納するkvデータ

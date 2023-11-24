@@ -1,0 +1,18 @@
+/* RealTimeChatFormを修飾するCSSファイル */
+
+h1 {
+    background-color: 'blue';
+    color: 'white';
+    font-size: 24;
+    padding: 12px;
+}
+
+form {
+    padding: 12px;
+    border: 1px solid silver;
+    background-color: #F0F0F0F0;
+}
+
+right {
+    text-align: 'right';
+}
