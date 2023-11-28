@@ -2,8 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 // import App from './App';
-import BBSApp from './BBSApp';
-import RealTimeChatApp from './RealTimeChatApp';
+import BBSApp from './Keijiban/BBSApp';
+import RealTimeChatApp from './RealTimeChat/RealTimeChatApp';
+import WikiApp from './Wiki/WikiApp';
+
+
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(
@@ -13,7 +16,8 @@ root.render(
   <React.StrictMode>
     {/* <App /> */}
     {/* <BBSApp /> */}
-    <RealTimeChatApp />
+    {/* <RealTimeChatApp /> */}
+    <WikiApp />
   </React.StrictMode>
 );
 
