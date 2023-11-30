@@ -78,11 +78,11 @@ const redis = new Redis({
 // Redisに格納するkv初期データ
 const init = async () => {
     // Promise.allで同時にセット
-    await redis.set(Date.now().toString(), JSON.stringify());
-    await redis.set(Date.now().toString(), JSON.stringify());
-    await redis.set(Date.now().toString(), JSON.stringify());
-    await redis.set(Date.now().toString(), JSON.stringify());
-    await redis.set(Date.now().toString(), JSON.stringify());
+    await redis.set("test_wiki_1", JSON.stringify({ timestamp: Date.now().toString(), doc: "wiki_1_です" }));
+    await redis.set("test_wiki_2", JSON.stringify({ timestamp: Date.now().toString(), doc: "wiki_2_です" }));
+    await redis.set("test_wiki_3", JSON.stringify({ timestamp: Date.now().toString(), doc: "wiki_3_です" }));
+    await redis.set("test_wiki_4", JSON.stringify({ timestamp: Date.now().toString(), doc: "wiki_4_です" }));
+    await redis.set("test_wiki_5", JSON.stringify({ timestamp: Date.now().toString(), doc: "wiki_5_です" }));
 };
 
 // Redis起動時にデータを格納して, Webサーバーを起動させる
@@ -158,18 +158,53 @@ app.get('/', allowCORS, async (req, res) => {
     console.log('-----');
 });
 
+// Wikiデータ一覧を取得
+app.get("api/all", allowCORS, async (req, res) => {
+    try {
+        // Redisからレコードを取り出す
+        const stream = redis.scanStream({
+            match: '*', // 時刻key
+            count: 2 // 1回の呼び出しで2つ取り出す
+        });
+        const records = []; // Array<{ name: "wikiname", record: { timestamp: 'time', doc: 'content'}}>
+        for await (const resultKeys of stream) {
+            for (const key of resultKeys) {
+                const value = await redis.get(key);
+                const json = JSON.parse(value);
+                const record = { timestamp: json.timestamp, doc: json.doc };
+                records.push({ name: key, record: record });
+            }
+        }
+
+        console.log("records", records);
+        res.status(200).json(records);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(`[Error] Failed to get all key list from redis db.\n`);
+    }
+
+
+    console.log('GETメソッドを受け取りました.');
+    console.log('-----');
+});
+
 // Wikiデータを返すAPI
 app.get('/api/get/:wikiname', allowCORS, async (req, res) => {
     // DB(redis)からwikiname(key)に対応するHTMLドキュメント(value)を探す
     const wikiname = req.params.wikiname;
+    console.log(':wikiname: ', wikiname);
     try {
         // Redisからレコードを取り出す
         const record = redis.get(wikiname);
-        if (record === null || record !== undefined) {
+
+        /* record == null */
+        if (record === null || record === undefined) {
             res.json({ 
                 status: false, 
                 msg: `[Error] No found the document of key : ${wikiname}`
             });
+            return;
         }
 
         const timestamp = record.timestamp;
@@ -181,6 +216,8 @@ app.get('/api/get/:wikiname', allowCORS, async (req, res) => {
         });
 
     } catch(err) {
+        console.error(err);
+
         res.json({
             status: false,
             msg: `[Error] Failed to load the doc of ${wikiname} from redis db.`
@@ -216,7 +253,7 @@ app.post('/api/put/:wikiname', allowCORS, async (req, res) => {
             for (const key of resultKeys) {
                 const value = await redis.get(key);
                 // const record = JSON.parse(value);
-                console.log('value:', value);
+                // console.log('value:', value);
                 const record = value; // json object
                 records.push({ 
                     name: record.name, 
