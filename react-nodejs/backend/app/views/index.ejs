@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <!-- 文字セット -->
+    <meta charset="UTF-8">
+
+    <!-- レイアウト -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Webページの説明 -->
+    <title>React SSR</title>
+    <meta name="description" content="Webページの説明">
+    <meta name="keywords" content="キーワード">
+
+    <!-- OGP設定 -->
+    <meta property="og:local" content="ja_JP" />
+    <meta property="og:type" content="ウェブサイト名" />
+    <meta property="og:title" content="HTML初心者の勉強ページ" />
+    <meta property="og:description" content="技術者がWeb技術であるHTMLを学んでいます." />
+    <meta property="og:url" content="http://localhost:80/index.html" />
+    <meta property="og:site_name" content="コンテンツ名" />
+    <meta property="og:image" content="http:/localhost:80/static/images/ogp/ogp_img.png" />
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+    <div>This page is <%= params.name %></div>
+    <a href="http://localhost:3000/edit/">localhost:3000/edit/へのリンク</a>
+</body>
+
+</html>

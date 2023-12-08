@@ -110,21 +110,44 @@ redis.on('error', (err) => {
 
 /* ----------- Express Settings ----------- */
 const express = require("express");
-const PORT = 3334;
+const PORT = 3335;
 
 // サーバー用インスタンスを作成
 const app = express();
 
 // クロスオリジンのパーミッション
 const allowCORS = function (req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*'); // すべてのオリジンを許可
+    res.setHeader('Access-Control-Allow-Origin', '*'); // すべてのオリジンを許可(暫定)
 
     if (req.method == 'OPTIONS') {
+        const referer = res.headers['referer'];
+        console.log(`[Preflight] Inquire Cross-Origin-Resource-Sharing(CORS) by OPTIONS method from ${referer}`);
         return res.status(200).send();
     } {
         next();
     }
 };
+
+// Request&Response ヘッダーをログ表示
+const showHeaders = function(req, res, next) {
+    const referer = req.headers['referer'];
+    const host = req.headers['host'];
+    console.log(`[Access] from ${referer} to ${host}`);
+
+    console.log('---------- Request Headers ----------');
+    for (const [key, value] of Object.entries(req.headers)) {
+        if (key == null || value == null) continue;
+        console.log(`[Req Header] ${key}=${value}`);
+    }
+
+    // console.log('---------- Response Headers ----------');
+    // for (const [key, value] of Object.entries(res.headers)) {
+    //     if (key == null || value == null) continue;
+    //     console.log(`[Res Header] ${key}=${value}`);
+    // }
+
+    next();
+}
 
 // 包括的エラーハンドリング(同期処理とnext関数の引数ににErrorを指定した場合のみ)
 app.use((err, req, res, next) => {
@@ -136,30 +159,65 @@ app.get("/async/err", allowCORS, async (req, res) => {
     throw new Error("非同期エラー"); // プロセス内でキャッチできないので、サーバーが落ちる.
 });
 
-// publicディレクトリを自動で返す
-// APIではなく, 通常のWebアクセスをどのように処理するかを指定する.
-// 下記は, `./public`直下にある静的なファイルを配信する設定.
-// app.use('/wiki/:wikiname', express.static('./public'));
-// app.use('/edit/:wikiname', express.static('./public'));
 
-// POST時のbodyのエンコード方式(3つ) https://zenn.dev/bigen1925/books/introduction-to-web-application-with-python/viewer/post-parameters
+
+// POST時のbodyのエンコード方式(3つ) 
+// 1) application/x-www-form-encoded
+// 2) multipart/form-data
+// 3) application/json
+// https://zenn.dev/bigen1925/books/introduction-to-web-application-with-python/viewer/post-parameters
 // URLエンコード https://qiita.com/sisisin/items/3efeb9420cf77a48135d
 // https://expressjs.com/en/4x/api.html#express.json
-app.use(express.json()) // request-bodyのjson形式を受け取る
-app.use(express.urlencoded({ extended: true })) // request-bodyのurlencode形式を受け取る
+app.use(express.json()) // application/json形式に対応
+app.use(express.urlencoded({ extended: true })) // request-bodyのurlencode形式に対応
 // app.use(express.raw());
+
+// ejsをビューエンジンに指定
+app.set('view engine', 'ejs');
 
 /* ----- APIを定義 ----- */
 
-// リダイレクト
-app.get('/', allowCORS, async (req, res) => {
-    res.redirect(302, 'wiki/FrontPage');
-    console.log('リダイレクトしました.');
+// publicディレクトリのindex.htmlに自動リダイレクト
+// APIではなく, 通常のWebアクセスをどのように処理するかを指定する.
+// 下記は, `./public`直下にある静的なファイルを配信する設定.
+// app.use('/home', express.static('./public'));
+// app.use('/edit/:wikiname', express.static('./public'));
+
+const myApiServerUrl = `http://localhost:${PORT}`;
+const reactServerUrl = "http://localhost:3000";
+
+// Root: SSR
+app.get('/', allowCORS, showHeaders, async (req, res) => {
+    console.log('[Access] /');
+
+    res.render(path.join(__dirname, "views", "index.ejs"), {
+        params: { name: 'Home画面' }
+    });
+
+    console.log('GETメソッドを受け取りました.');
+    console.log('---');
+});
+
+// Reactフロントエンドの配信サーバにリダイレクトする
+app.get('/wiki/:wikiname', allowCORS, showHeaders, (req, res) => {
+    const wikiname = req.params.wikiname;
+
+    console.log(`[Access] /wiki/${wikiname}`);
+
+    // Redirect
+    const url = path.join([reactServerUrl, 'wiki', wikiname]);
+    res.redirect(/* Moved Permanently */301, url);
+    console.log(`[Redirect] ${url}`);
+
+    console.log('GETメソッドを受け取りました.');
     console.log('-----');
 });
 
 // Wikiデータ一覧を取得
-app.get("api/all", allowCORS, async (req, res) => {
+app.get("/api/all", allowCORS, showHeaders, async (req, res) => {
+
+    console.log(`[Access] /api/all`);
+
     try {
         // Redisからレコードを取り出す
         const stream = redis.scanStream({
@@ -190,10 +248,13 @@ app.get("api/all", allowCORS, async (req, res) => {
 });
 
 // Wikiデータを返すAPI
-app.get('/api/get/:wikiname', allowCORS, async (req, res) => {
+app.get('/api/get/:wikiname', allowCORS, showHeaders, async (req, res) => {
     // DB(redis)からwikiname(key)に対応するHTMLドキュメント(value)を探す
+
     const wikiname = req.params.wikiname;
-    console.log(':wikiname: ', wikiname);
+
+    console.log(`[Access] /api/get/${wikiname}`);
+
     try {
         // Redisからレコードを取り出す
         const record = redis.get(wikiname);
@@ -229,16 +290,18 @@ app.get('/api/get/:wikiname', allowCORS, async (req, res) => {
 });
 
 // Wikiデータを書き込むAPI
-app.post('/api/put/:wikiname', allowCORS, async (req, res) => {
+app.post('/api/put/:wikiname', allowCORS, showHeaders, async (req, res) => {
     const wikiname = req.params.wikiname;
-    console.log(`/api/put/${wikiname}`);
+
+    console.log(`[Access] /api/pul/${wikiname}`);
+
     console.log(`----- request body -----\n${req.body}\n`);
     console.log(`content-type: ${req.headers['content-type']}`);
 
     // json形式以外は受け付けない
     if (req.headers['content-type'] !== "application/json") {
-        console.log("Content-Type is not `application/json`");
-        return;
+        console.log("Content-Type must be `application/json`");
+        return res.status(/* Unsupported Media Type */415).send();
     }
 
     // 既存エントリーのチェック
@@ -285,7 +348,10 @@ app.post('/api/put/:wikiname', allowCORS, async (req, res) => {
         const comment = isExist ? "更新しました." : "作成しました.";
         console.log(`Redis DBに ${wikiname} を` + comment);
 
-        res.json({ status: true });
+        res.json({ 
+            status: true,
+            msg: `[Success] Reids DBに${wikiname}を${comment}`
+        });
 
     } catch(err) {
         // res.status(500).send(`[Error] Failed to search ${wikiname} from redis db.\n`);

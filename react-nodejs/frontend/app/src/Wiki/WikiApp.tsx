@@ -4,7 +4,8 @@ import ReactDom from "react-dom/client";
 // React Router DOM
 import {
     BrowserRouter,
-    Routes,
+    // Routes, // react-router-dom v6
+    Switch, // react-router-dom v5
     Route,
     Link,
 } from 'react-router-dom';
@@ -15,12 +16,17 @@ import WikiEdit from "./WikiEdit";
 
 // Wiki アプリ
 const WikiApp = () => {
+    console.log("Wiki App");
     return (
         <BrowserRouter>
-            <Routes>
-                <Route path="/wiki/:name" element={<WikiShow />} />
-                <Route path="/edit/:name" element={<WikiEdit />} />
-            </Routes>
+            {/* <Routes> */}
+            <Switch>
+                <Route exact path="/" component={WikiShow} />
+                <Route path="/wiki/:name" component={WikiShow} />
+                <Route path="/edit/" component={WikiEdit} />
+                <Route path="/edit/:name" component={WikiEdit} />
+            </Switch>
+            {/* </Routes> */}
         </BrowserRouter>
     );
 };
