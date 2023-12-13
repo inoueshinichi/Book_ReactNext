@@ -115,18 +115,118 @@ const PORT = 3335;
 // サーバー用インスタンスを作成
 const app = express();
 
+// 許可するオリジン
+const allowCrossOrigins = [
+    "http://localhost:3000"
+];
+
+// 許可するメソッド
+const allowCrossOriginMethods = [
+    "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"
+];
+
+// 許可するヘッダー
+const allowCrossOriginHeaders = [
+    "content-type",
+];
+
+// クレデンシャル(Set-Cookie,Set-Cookie2など)の許可
+const allowCrossOriginCredentials = true;
+
+// preflightのキャッシュ有効期限
+const allowCrossOriginMaxAge = 60; // 60秒
+
 // クロスオリジンのパーミッション
 const allowCORS = function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', '*'); // すべてのオリジンを許可(暫定)
+    
+    console.log('[allowCORS] ---------- START ---------- ');
+    console.log(`[Method] ${req.method}`);
+    
+    const origin = req.headers['origin'];
+    console.log('origin: ', origin);
 
-    if (req.method == 'OPTIONS') {
-        const referer = res.headers['referer'];
-        console.log(`[Preflight] Inquire Cross-Origin-Resource-Sharing(CORS) by OPTIONS method from ${referer}`);
-        return res.status(200).send();
-    } {
-        next();
+    // リファラの確認
+    const referer = req.headers['referer'] ?? 'No referrer';
+    console.log(`[Referrer] ${referer}`);
+
+    // CORS経由のアクセスの場合, Originヘッダが必ず存在する
+    if (!(origin == null)) {
+        // CORSの許可 (Access-Control-Allow-Origin)
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        // res.setHeader('Access-Control-Allow-Origin', '*'); // すべてのオリジンを許可(暫定)
+
+        // Set-Cookie, Set-Cookie2等のクレデンシャルなレスポンスヘッダを許可
+        res.setHeader('Access-Control-Allow-Credentials', allowCrossOriginCredentials);
+
+        // preflight以降のCORS経由で許可するヘッダーを設定
+        const acAllowhList = ["access-control-request-origin"];
+        
+        // preflight config for cors
+        if (req.method === 'OPTIONS') {
+            console.log('[OPTIONS] preflight request about CORS');
+
+            console.log('--- Setting Specific Response Headers for preflight request ---');
+
+            // Access-Control-Request-Methodの確認
+            const acrm = req.headers['access-control-request-method'];
+            console.log(`[Access-Control-Request-Method] ${acrm}`);
+
+            // Acces-Control-Allow-Methods(許可メソッド)を設定
+            if (allowCrossOriginMethods.includes(acrm)) {
+                // 該当すれば...設定
+                res.setHeader('Access-Control-Allow-Methods', acrm);
+            }
+            
+            // Access-Control-Request-Headersの確認
+            const acrhs = req.headers['access-control-request-headers'];
+            console.log(`[Access-Control-Request-Headers] ${acrhs}`);
+            const acRequesthList = acrhs.split(',');
+            
+            /* Access-Control-Allow-Headersでブラウザに許可するヘッダ-を追加する */
+            // 下記はデフォルトで許可されている
+            // Accept
+            // Accept-Encoding
+            // Accept-Language
+            // Content-Type(application/x-www-form-urlencoded, multipart/form-data, text/plain)
+            for (const allowHeader of allowCrossOriginHeaders) {
+                if (acRequesthList.includes(allowHeader)) {
+                    // 該当すれば...設定
+                    acAllowhList.push(allowHeader);
+                }
+            }
+            const acAllowHeaders = acAllowhList.join(',');
+            console.log('[Access-Control-Allow-Headers] ', acAllowHeaders);
+            res.setHeader('Access-Control-Allow-Headers', acAllowHeaders);
+
+            // Access-Control-Allow-HeadersがCORS確立後に送信したいヘッダを示すのに対して,
+            // Access-Control-Expose-Headerは, サーバ側が設定したヘッダをブラウザ側が読み出せるようにする.
+            // 基本的にAccess-Content-Allow-Headersと同じでよい.
+            console.log('[Access-Control-Expose-Headers', acAllowHeaders);
+            res.setHeader('Access-Control-Expose-Headers', acAllowHeaders);
+
+            // 再preflightリクエストまでのキャッシュ期限
+            res.setHeader('Access-Control-Max-Age', allowCrossOriginMaxAge);
+
+            console.log('[Done] setting headers of preflight response');
+
+            console.log('[allowCORS] ---------- Send 200 to browser ---------- ');
+
+            return res.status(200).send();
+        }
+
+        // Access-Control-Allow-Headersでブラウザに許可するヘッダ-を追加する(preflight以降も必要)
+        const acAllowHeaders = acAllowhList.join(',');
+        res.setHeader('Access-Control-Allow-Headers', acAllowHeaders);
     }
+
+    console.log('[allowCORS] ---------- Next ---------- ');
+
+    // console.log('[Res Headers]: ', res.headers)
+
+    next();
 };
+
+app.use(allowCORS);
 
 // Request&Response ヘッダーをログ表示
 const showHeaders = function(req, res, next) {
@@ -134,11 +234,11 @@ const showHeaders = function(req, res, next) {
     const host = req.headers['host'];
     console.log(`[Access] from ${referer} to ${host}`);
 
-    console.log('---------- Request Headers ----------');
-    for (const [key, value] of Object.entries(req.headers)) {
-        if (key == null || value == null) continue;
-        console.log(`[Req Header] ${key}=${value}`);
-    }
+    // console.log('---------- Request Headers ----------');
+    // for (const [key, value] of Object.entries(req.headers)) {
+    //     if (key == null || value == null) continue;
+    //     console.log(`[Req Header] ${key}=${value}`);
+    // }
 
     // console.log('---------- Response Headers ----------');
     // for (const [key, value] of Object.entries(res.headers)) {
@@ -155,7 +255,7 @@ app.use((err, req, res, next) => {
 });
 
 // 非同期なエラーは包括的エラーハンドリングでキャッチできない
-app.get("/async/err", allowCORS, async (req, res) => {
+app.get("/async/err", async (req, res) => {
     throw new Error("非同期エラー"); // プロセス内でキャッチできないので、サーバーが落ちる.
 });
 
@@ -183,53 +283,60 @@ app.set('view engine', 'ejs');
 // app.use('/home', express.static('./public'));
 // app.use('/edit/:wikiname', express.static('./public'));
 
+const FRONTEND_PORT = 3000;
 const myApiServerUrl = `http://localhost:${PORT}`;
-const reactServerUrl = "http://localhost:3000";
+const reactServerUrl = `http://localhost:${FRONTEND_PORT}`;
 
 // Root: SSR
-app.get('/', allowCORS, showHeaders, async (req, res) => {
+app.get('/', showHeaders, async (req, res) => {
     console.log('[Access] /');
 
     res.render(path.join(__dirname, "views", "index.ejs"), {
         params: { name: 'Home画面' }
     });
 
+    console.log('Server Side Rendering : index.ejs');
     console.log('GETメソッドを受け取りました.');
-    console.log('---');
+    console.log('---\n');
 });
 
 // Reactフロントエンドの配信サーバにリダイレクトする
-app.get('/wiki/:wikiname', allowCORS, showHeaders, (req, res) => {
+app.get('/wiki/:wikiname', showHeaders, (req, res) => {
     const wikiname = req.params.wikiname;
 
     console.log(`[Access] /wiki/${wikiname}`);
 
+    // リダイレクト時にCookieを付与
+    const userId = "0123456789";
+    console.log(`[UserId] ${userId}`)
+    res.cookie('UserId', userId);
+
     // Redirect
-    const url = path.join([reactServerUrl, 'wiki', wikiname]);
+    const url = `${reactServerUrl}/wiki/${wikiname}`;
     res.redirect(/* Moved Permanently */301, url);
     console.log(`[Redirect] ${url}`);
 
     console.log('GETメソッドを受け取りました.');
-    console.log('-----');
+    console.log('---\n');
 });
 
 // Wikiデータ一覧を取得
-app.get("/api/all", allowCORS, showHeaders, async (req, res) => {
+app.get("/api/all", showHeaders, async (req, res) => {
 
     console.log(`[Access] /api/all`);
 
     try {
         // Redisからレコードを取り出す
         const stream = redis.scanStream({
-            match: '*', // 時刻key
+            match: '*', // key
             count: 2 // 1回の呼び出しで2つ取り出す
         });
         const records = []; // Array<{ name: "wikiname", record: { timestamp: 'time', doc: 'content'}}>
         for await (const resultKeys of stream) {
             for (const key of resultKeys) {
-                const value = await redis.get(key);
-                const json = JSON.parse(value);
-                const record = { timestamp: json.timestamp, doc: json.doc };
+                const jsonStr = await redis.get(key);
+                const jsonObj = JSON.parse(jsonStr);
+                const record = { timestamp: jsonObj.timestamp, doc: jsonObj.doc };
                 records.push({ name: key, record: record });
             }
         }
@@ -244,12 +351,12 @@ app.get("/api/all", allowCORS, showHeaders, async (req, res) => {
 
 
     console.log('GETメソッドを受け取りました.');
-    console.log('-----');
+    console.log('---\n');
 });
 
 // Wikiデータを返すAPI
-app.get('/api/get/:wikiname', allowCORS, showHeaders, async (req, res) => {
-    // DB(redis)からwikiname(key)に対応するHTMLドキュメント(value)を探す
+app.get('/api/get/:wikiname', showHeaders, async (req, res) => {
+    // DB(redis)からwikiname(key)に対応するMarkdownドキュメント(value)を探す
 
     const wikiname = req.params.wikiname;
 
@@ -257,23 +364,29 @@ app.get('/api/get/:wikiname', allowCORS, showHeaders, async (req, res) => {
 
     try {
         // Redisからレコードを取り出す
-        const record = redis.get(wikiname);
+        const jsonStr = await redis.get(wikiname);
+        const jsonObj = JSON.parse(jsonStr);
+        const timestamp = jsonObj.timestamp;
+        const doc = jsonObj.doc;
 
-        /* record == null */
-        if (record === null || record === undefined) {
+        console.log(`[Redis DB] fetch key=${wikiname}`);
+        console.log("timestamp ", timestamp);
+        console.log("doc ", doc);
+
+        /* jsonStr === null or jsonStr === undefined */
+        if (jsonStr == null) {
             res.json({ 
                 status: false, 
-                msg: `[Error] No found the document of key : ${wikiname}`
+                name: wikiname,
+                record: { timestamp: "", markdown: "" }
             });
             return;
         }
 
-        const timestamp = record.timestamp;
-        const text = record.doc;
         res.json({ 
             status: true, 
             name: wikiname, 
-            record: { timestamp, text }
+            record: { timestamp: timestamp, markdown: doc }
         });
 
     } catch(err) {
@@ -286,17 +399,18 @@ app.get('/api/get/:wikiname', allowCORS, showHeaders, async (req, res) => {
     }
     
     console.log('GETメソッドを受け取りました.');
-    console.log('-----');
+    console.log('---\n');
 });
 
 // Wikiデータを書き込むAPI
-app.post('/api/put/:wikiname', allowCORS, showHeaders, async (req, res) => {
+app.post('/api/put/:wikiname', showHeaders, async (req, res) => {
     const wikiname = req.params.wikiname;
 
     console.log(`[Access] /api/pul/${wikiname}`);
-
-    console.log(`----- request body -----\n${req.body}\n`);
     console.log(`content-type: ${req.headers['content-type']}`);
+    console.log(`----- request body -----`);
+    console.log(JSON.stringify(req.body));
+    
 
     // json形式以外は受け付けない
     if (req.headers['content-type'] !== "application/json") {
@@ -308,49 +422,48 @@ app.post('/api/put/:wikiname', allowCORS, showHeaders, async (req, res) => {
     try {
         const stream = redis.scanStream({
             match: '*', // wikinameでもいいかも
-            count: 4 // 1回に4チャンクを取り出す
+            count: 2 // 1回2チャンクを取り出す
         });
 
-        const records = []; // Array<{name: 'wikiname', { timestamp: 'time', doc: 'text' }}>
+        const records = []; // Array<{ name: string }>
         for await (const resultKeys of stream) {
             for (const key of resultKeys) {
-                const value = await redis.get(key);
-                // const record = JSON.parse(value);
-                // console.log('value:', value);
-                const record = value; // json object
                 records.push({ 
-                    name: record.name, 
-                    record: { 
-                        timestamp: record.timestamp, 
-                        doc: record.doc
-                    }
+                    name: key
                 });
             }
         }
 
+        // 既存エントリーがあるかチェック
         const isExist = records.some((value, index, array) => {
             return value.name === wikiname;
         });
 
         // 既存エントリーがある場合は更新のために消す.
+        let existRecord = null; // { timestamp: "date", doc: "content" }
         if (isExist) {
-            redis.delete(wikiname);
+            existRecord = await redis.get(wikiname); // json string
+            existRecord = JSON.parse(existRecord);
+            redis.del(wikiname);
+            console.log(`[Delete] ${wikiname} : ${existRecord}`);
         }
-        // const jsonObj = JSON.parse(req.body);
-        const jsonObj = req.body; // 既にJSONに変換されている!
-        console.log(`jsonObj:\n`, jsonObj);
-        const text = jsonObj['doc'];
-        redis.set(wikiname, { 
-            timestamp: Date.now().toString(), 
-            doc: text // html doc
-        });
-        
-        const comment = isExist ? "更新しました." : "作成しました.";
-        console.log(`Redis DBに ${wikiname} を` + comment);
 
+        console.log(isExist ? "[Update]" : "[Create]");
+        console.log(`[Redis DB] key=${wikiname}, value=${existRecord}`);
+
+        const jsonObj = req.body; // 既にJSONに変換されている!
+        console.log(`jsonStr:\n`, JSON.stringify(req.body));
+        const timestamp = Date.now().toString();
+        const mdText = jsonObj['doc']; // markdonw
+
+        console.log(`[Set] timestamp`, timestamp);
+        console.log(`[Set] markdown`, mdText);
+
+        await redis.set(wikiname, JSON.stringify({ timestamp: timestamp, doc: mdText }));
+        
         res.json({ 
             status: true,
-            msg: `[Success] Reids DBに${wikiname}を${comment}`
+            msg: `[Success] key=${wikiname}, value=${mdText} on Redis DB.`
         });
 
     } catch(err) {
@@ -360,12 +473,12 @@ app.post('/api/put/:wikiname', allowCORS, showHeaders, async (req, res) => {
 
         res.json({
             status: false,
-            msg: `[Error] Failed to search ${wikiname} from redis db.`
+            msg: `[Fail] key=${wikiname} on Redis DB.`
         });
     }
 
     console.log('POSTメソッドを受け取りました.');
-    console.log('-----');
+    console.log('---\n');
 });
 
 

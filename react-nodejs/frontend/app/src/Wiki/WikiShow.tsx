@@ -27,9 +27,7 @@ interface WikiShowProps extends RouteComponentProps<{ name: string }> {
 
 type WikiShowState = {
     name: string;
-    markdown: string;
     html: string;
-    loaded: boolean;
     login: boolean;
 };
 
@@ -47,14 +45,20 @@ class WikiShow extends React.Component<WikiShowProps, WikiShowState> {
         // const paramName: string = urlParams.name ?? "not found `name` param of /wiki/:name";
 
         // react-router-dom v5
-        this.urlParamsName = props.match.params.name ?? '';
+        this.urlParamsName = this.props.match.params.name ?? "";
+        console.log(`WikiShow [urpParamsName] `, this.urlParamsName);
+
+        // Cookieでログイン状態を確認
+        const userId: string = Cookies.get('UserId') ?? "Unknown";
+        let login: boolean = false;
+        if (userId !== "Unknown") {
+            login = true;
+        }
 
         this.state = {
             name: this.urlParamsName,
-            markdown: '',
             html: '',
-            loaded: false,
-            login: false
+            login: login
         };
 
         this.serverApiUrl = "http://localhost:3335"
@@ -68,28 +72,55 @@ class WikiShow extends React.Component<WikiShowProps, WikiShowState> {
 
         // Cookieが存在しない(ログアウト)状態ではfetchしない.
         const userId: string = Cookies.get('UserId') ?? "Unknown";
+        console.log(`[UserId] ${userId}`);
         if (userId === "Unknown") {
+            console.log("WikiShow [Return] bacause UserId is `Unkonwn`.");
             return;
         }
 
+        console.log("WikiShow [Start] これからfetchします.");
+
         const { name: wikiname } = this.state;
+        const url: string = `${this.serverApiUrl}/api/get/${wikiname}`;
+
+        let reqHeaders = new Headers();
+        reqHeaders.set('Content-Type', 'application/json');
+        reqHeaders.set('Access-Control-Request-Origin', this.serverStaticUrl);
 
         // fetch API
-        fetch(`${this.serverApiUrl}/api/get/${wikiname}`, {
-            method: 'get',
+        fetch(url, {
+            method: 'GET',
             mode: "cors", // no-cors, *cors, same-origin
             cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: "same-origin", // include, *same-origin, omit
+            credentials: "include", // include, *same-origin, omit
             redirect: "follow", // manual, *follow, error
-            referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, 
+            referrerPolicy: "origin", // no-referrer, *no-referrer-when-downgrade, origin, 
             // origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
         }).then((res: Response) => {
-            return res.text(); // markdown
-        }).then((data: string) => {
+
+            if (!res.ok) {
+                return new Error(`WikiShow [Res Error] status code: ${res.status}`);
+            }
+
+            console.log(`WikiShow [Res Headers] `, res.headers);
+            console.log("WikiShow [Res Body]", res.body);
+            return res.json();
+
+        }).then((data: { status: boolean; name: string; record: { timestamp: string, markdown: string}}) => {
+
+            const { status, record } = data;
+
+            let mdText: string = "";
+            let timeStamp: string = "";
+            if (!status) {
+                mdText = `Failed to get Redis DB record from ${url}`;
+            }
+
+            // timestampの取得
+            timeStamp = record.timestamp;
 
             // markdownの取得
-            const mdText: string = data;
-            const { name: wikiname } = this.state;
+            mdText = record["markdown"];
 
             // markdown -> html
             const htmlText: string = marked.parse(mdText) as string;
@@ -97,15 +128,14 @@ class WikiShow extends React.Component<WikiShowProps, WikiShowState> {
             // 再描画
             this.setState({
                 name: wikiname,
-                markdown: mdText,
                 html: htmlText,
-                loaded: true
+                login: true               
             });
 
         }).catch((err: Error) => {
-
+            console.error(err);
         }).finally(() => {
-            console.log(`[Done] fetch API for /api/get/${this.state.name}`);
+            console.log(`[Done] fetch API for /api/get/${wikiname}`);
         });
 
         console.log('[DONE] WikiShow componentWillMount');
@@ -118,18 +148,18 @@ class WikiShow extends React.Component<WikiShowProps, WikiShowState> {
 
     // 画面の表示
     render(): React.JSX.Element {
+        console.log(`[DONE] WikiShow render`);
 
         // 自身のURLがリダイレクトされて結果取得されているのか否かをチェック
-        const userId: string = Cookies.get('UserId') ?? "Unknown";
-        if (userId === "Unknown") {
+        if (!this.state.login || this.urlParamsName === "") {
+
             // もしログインしていなければ、リダイレクト
+            console.log("[State] Logout");
+            console.log("[Try] Login by redirect");
+            
             window.location.replace(`${this.serverApiUrl}/`);
             window.alert(`[Redirect] 外部サイト(${this.serverApiUrl}/)にリダイレクトします.`);
             return <></>;
-        }
-
-        if (!this.state.loaded) {
-            return <p>読み込み中...</p>;
         }
         
         const { name: wikiname, html } = this.state;

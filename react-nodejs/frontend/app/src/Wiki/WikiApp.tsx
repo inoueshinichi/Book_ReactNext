@@ -20,12 +20,14 @@ const WikiApp = () => {
     return (
         <BrowserRouter>
             {/* <Routes> */}
-            <Switch>
+            {/* <Switch> */}
                 <Route exact path="/" component={WikiShow} />
                 <Route path="/wiki/:name" component={WikiShow} />
-                <Route path="/edit/" component={WikiEdit} />
+            {/* </Switch> */}
+            {/* <Switch> */}
+                <Route exact path="/edit" component={WikiEdit} />
                 <Route path="/edit/:name" component={WikiEdit} />
-            </Switch>
+            {/* </Switch> */}
             {/* </Routes> */}
         </BrowserRouter>
     );

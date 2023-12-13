@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDom from "react-dom/client";
-import { 
+import {
     // Redirect, // v6.x.x以上で非推奨
     // redirect,
     Link,
@@ -24,8 +24,9 @@ interface WikiEditProps extends RouteComponentProps<{ name: string }> {
 
 type WikiEditState = {
     name: string;
-    body: string;
+    doc: string;
     loaded: boolean;
+    saved: boolean;
     jump: string;
 };
 
@@ -33,6 +34,8 @@ type WikiEditState = {
 class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
     private serverApiUrl: string;
     private serverStaticUrl: string;
+    private urlParamsName: string;
+    private loaded: boolean;
 
     constructor(props: Readonly<WikiEditProps>) {
         super(props);
@@ -42,12 +45,19 @@ class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
         // const paramName: string = urlParams.name ?? "not found `name` param of /edit/:name";
 
         // react-router-dom v5
-        const urlParams: string = props.match.params.name ?? '';
+        this.urlParamsName = this.props.match.params.name ?? "";
+        console.log('WikiEdit [urlParamsName]', this.urlParamsName);
+
+        this.loaded = false;
+        if (this.urlParamsName !== "") {
+            this.loaded = true;
+        }
 
         this.state = {
-            name: urlParams,
-            body: '',
-            loaded: false,
+            name: this.urlParamsName,
+            doc: '',
+            loaded: this.loaded,
+            saved: false,
             jump: ''
         };
 
@@ -58,48 +68,108 @@ class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
     // Wikiの内容を読み込む
     componentWillMount(): void {
 
-        // // fetch API
-        // fetch(`${this.serverApiUrl}/api/get/${this.state.name}`, {
-        //     method: 'get',
-        //     mode: "cors", // no-cors, *cors, same-origin
-        //     cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-        //     credentials: "same-origin", // include, *same-origin, omit
-        //     redirect: "follow", // manual, *follow, error
-        //     referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, 
-        //     // origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-        // }).then((res: Response) => {
+        if (this.urlParamsName === "") {
+            console.log("WikiEdit [Return] bacause urlParamsName is empty.");
+            return;
+        }
 
-        // }).catch((err: Error) => {
+        console.log("WikiEdit [Start] これからfetchします.");
 
-        // }).finally(() => {
-        //     console.log(`[Done] fetch API for /api/get/${this.state.name}`);
-        // });
+        const { name: wikiname } = this.state;
+        const url: string = `${this.serverApiUrl}/api/get/${wikiname}`;
+
+
+        // fetch API
+        fetch(url, {
+            method: 'GET',
+            mode: "cors", // no-cors, *cors, same-origin
+            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: "include", // include, *same-origin, omit
+            redirect: "follow", // manual, *follow, error
+            referrerPolicy: "origin", // no-referrer, *no-referrer-when-downgrade, origin, 
+            // origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+        }).then((res: Response) => {
+
+            if (!res.ok) {
+                return new Error(`WikiEdit [Res Error] status code: ${res.status}`);
+            }
+
+            console.log(`WikiEdit [Res Headers] `, res.headers);
+            console.log("WikiEdit [Res Body]", res.body);
+            return res.json();
+
+        }).then((data: { status: boolean; name: string; record: { timestamp: string, markdown: string } }) => {
+            const { status, name, record } = data;
+            const markdown: string = record.markdown;
+
+            if (status) {
+                this.setState({
+                    name: name,
+                    doc: markdown,
+                    loaded: true,
+                    saved: false,
+                });
+            }
+
+        }).catch((err: Error) => {
+            console.error(err);
+        }).finally(() => {
+            console.log(`[Done] fetch API for /api/get/${this.state.name}`);
+        });
     }
 
     // 仮想DOMのマウント完了(一発目のrenderの後に発生)
     componentDidMount(): void {
         // frames
-        console.log(`[Browder] frames: ${window.frames}`);
+        console.log(`[Browser] frames: ${window.frames}`);
+
         // closed
-        console.log(`[Browder] closed: ${window.closed}`);
-        // defaultStatus
-        // console.log(`[Browder] defaultStatus: ${window.defaultStatus}`);
+        console.log(`[Browser] closed: ${window.closed}`);
+
         // history
-        console.log(`[Browder] history: ${window.history}`);
-        
+        console.log(`[Browser] history: ${window.history}`);
+
+        // location
+        console.log(`[Browser] location: ${window.location}`);
+
+        // document
+        console.log(`[Browser] document: ${window.document}`);
+
+        // screen
+        console.log(`[Browser] screen: ${window.screen}`);
+
+        // statusbar
+        console.log(`[Browser] statusbar: ${window.statusbar}`);
+
+        // localStorage
+        console.log(`[Browser] localStorage: ${window.localStorage}`);
+
+        // sessionStorage
+        console.log(`[Browser] sessionStorage: ${window.sessionStorage}`);
+
+        // navigator
+        console.log(`[Browser] navigator: ${window.navigator}`);
+
+        // name
+        console.log(`[Browser] name: ${window.name}`);
+
         console.log('[DONE] WikiEdit componentDidMount');
     }
 
     // 本文をサーバーにPOSTする
     save(): void {
-        
-        const { name: wikiname, body: wikibody } = this.state;
+
+        const { name: wikiname, doc: wikidoc } = this.state;
         const data: {} = {
             name: wikiname,
-            doc: wikibody,
+            doc: wikidoc,
         };
 
-        console.log("[Start] これからfetchします.");
+        console.log("WikiEdit [Start] これからfetchします.");
+
+        let reqHeaders = new Headers();
+        reqHeaders.set('Content-Type', 'application/json');
+        reqHeaders.set('Access-Control-Request-Origin', this.serverStaticUrl);
 
         // fetch API
         const url: string = `${this.serverApiUrl}/api/put/${wikiname}`;
@@ -107,17 +177,17 @@ class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
         fetch(url, {
             method: 'POST', // *GET, POST, PUT, DELETE, etc.
             mode: "cors", // no-cors, *cors, same-origin
-            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: "same-origin", // include, *same-origin, omit
+            cache: "no-cache", // *cache-store, no-cache, reload, force-cache, only-if-cached
+            credentials: "include", // include, *same-origin, omit
             redirect: "follow", // manual, *follow, error
-            referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, 
+            referrerPolicy: "origin", // no-referrer, *no-referrer-when-downgrade, origin, 
             // origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-            headers: { 'Content-Type': 'application/json' },
+            headers: reqHeaders,
             body: JSON.stringify(data)
         }).then((res: Response) => {
 
             if (!res.ok) {
-                return new Error(`[Error] failed to request with POST to ${url}`);
+                return new Error(`WikiEdit [Res Error] status code: ${res.status}`);
             }
 
             return res.json(); // jsonオブジェクト
@@ -134,12 +204,12 @@ class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
             console.log(`[Json] msg: ${msg}`);
 
             this.setState({
-                loaded: status,
+                saved: status,
                 jump: `wiki/${wikiname}`
             });
         })
         .catch((err: Error) => {
-            console.error(`[Error] ${err}`);
+            console.error(err);
         }).finally(() => {
             console.log(`[Done] fetch API for /api/put/${wikiname}`);
         });
@@ -148,7 +218,7 @@ class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
     // テキストエリアの内容を更新
     bodyChanged(e: React.ChangeEvent<HTMLTextAreaElement>): void {
         this.setState({
-            body: e.target.value
+            doc: e.target.value
         });
     }
 
@@ -163,25 +233,42 @@ class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
     render(): React.JSX.Element {
 
         // 編集が完了した場合(saveの後)は, リダイレクト
-        if (this.state.jump !== "") {
+        const { saved, jump } = this.state;
+        if (saved && jump !== "") {
             window.location.replace(`${this.serverApiUrl}/${this.state.jump}`);
             window.alert(`[Redirect] APIサーバ(${this.serverApiUrl}/${this.state.jump})にリダイレクトします.`);
             return <>リダイレクト中</>;
         }
 
+
         // 編集画面を表示
-        const { name: wikiname } = this.state;
+        let readonly: boolean = false;
+        let placeholder: string = "";
+        if (this.state.loaded) {
+            readonly = true;
+            placeholder = this.state.name;
+        }
+        console.log('readonly', readonly);
+        console.log('placeholder ', placeholder);
+
         return (
             <div>
-                {/* <h1><a href={`${this.serverApiUrl}/wiki/${wikiname}`}>{wikiname}</a></h1> */}
-                <h1><p>WikiName</p><input type="text" onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.changeWikiname(e)}/></h1>
-                <textarea rows={12} cols={60} 
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => this.bodyChanged(e) }
-                    value={this.state.body} />
+                <h1>
+                    <p>WikiName</p>
+                    <input type="text"
+                        placeholder={placeholder}
+                        readOnly={readonly}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.changeWikiname(e)} />
+                </h1>
+                <textarea rows={12} cols={60}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => this.bodyChanged(e)}
+                    value={this.state.doc} />
                 <br />
-                <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => this.save() }>保存</button>
+                <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => this.save()}>保存</button>
             </div>
         );
+
+
     }
 }
 
