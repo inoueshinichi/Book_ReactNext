@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "monorepo",
+  "version": "1.0.0",
+  "description": "monorepo sample",
+  "author": "inoue.shinichi.1800@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "workspaces": "^0.1.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}
