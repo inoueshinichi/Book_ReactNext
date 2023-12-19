@@ -193,7 +193,30 @@ app.get('/view', (req, res) => {
     res.render(path.join(__dirname, "views", "index.ejs"));
 });
 
-app.get('/user/:id', async (req, res) => {
+const corsOptions = {
+    // 許可するリクエストオリジン (Access-Control-Allow-Origin)
+    origin: ['http://localhost:5500', 'http://127.0.0.1:5500'],
+    // 許可するリクエストメソッド (Access-Control-Allow-Methods)
+    methods: ['GET', 'POST', 'PUT', 'HEAD', 'DELETE', 'OPTIONS', 'TRACE', 'PATCH', 'CONNECT'],
+    // クレデンシャルヘッダを含めるかの成否 (Access-Control-Allow-Credentials)
+    credentials: true,
+    // 許可するリクエストヘッダ (Access-Control-Allow-Headers) ※ 指定しない場合, Access-Control-Request-Headersをそのまま反映.
+    allowedHeaders: ['Content-Type'],
+    // リクエスト側(ブラウザ側)に読み取り許可をするヘッダを指定 (Access-Control-Expose-Headers)
+    exposedHeaders: ['Content-Type', 'Content-Length'],
+    // Access-Control-Max-Age (次回のPreflight Requestまでのキャッシュ時間)
+    maxAge: 5/*秒*/, // preflight requestを送信しない秒数
+    // Preflight Request成功時に返すステータスコード
+    optionsSuccessStatus: 204,
+    // 次のミドルウェアにPreflight Requestを渡す成否
+    preflightContineu: true
+};
+
+// PreflightをすべてのURLに許可
+app.options('*', cors(corsOptions));
+
+// app.get('/user/:id', async (req, res) => {
+app.get('/api/user/:id', cors(corsOptions), async (req, res) => {
     try {
         const user = await usersHandler.getUser(req);
         res.status(200).json(user);
@@ -204,11 +227,33 @@ app.get('/user/:id', async (req, res) => {
     }
 });
 
-app.get('/users', async (req, res) => {
+// app.get('/users', async (req, res) => {
+app.get('/api/users', cors(corsOptions), async (req, res) => {
+    console.log('[Request Method]', req.method);
+    console.log('[Request Headers]', req.headers);
+
     try {
-        const locals = await usersHandler.getUsers(req);
-        res.render(path.join(__dirname, 'views', 'users.ejs'), locals);
+        const users = await usersHandler.getUsers(req);
+        // SSR
+        // res.render(path.join(__dirname, 'views', 'users.ejs'), users);
+
+        // JSON
+        res.status(200).json(users);
     } catch (err) {
         throw new BadRequest('[Fail] getUsers()');
     }
+});
+
+// クライアント(ブラウザ)側からJSONデータを受け取るAPI
+app.post('/api/post', cors(corsOptions), async (req, res) => {
+    console.log('[Request Method]', req.method);
+    console.log('[Request Headers]', req.headers);
+
+    console.log('----- JSON -----');
+    const jsonObj = req.body;
+    const jsonStr = JSON.stringify(jsonObj);
+    console.log(jsonObj);
+    console.log(jsonStr);
+
+    res.status(200).json({ status: true });
 });

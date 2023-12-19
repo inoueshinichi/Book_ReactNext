@@ -169,7 +169,7 @@ class WikiEdit extends React.Component<WikiEditProps, WikiEditState> {
 
         let reqHeaders = new Headers();
         reqHeaders.set('Content-Type', 'application/json');
-        reqHeaders.set('Access-Control-Request-Origin', this.serverStaticUrl);
+        // reqHeaders.set('Access-Control-Request-Origin', this.serverStaticUrl);
 
         // fetch API
         const url: string = `${this.serverApiUrl}/api/put/${wikiname}`;

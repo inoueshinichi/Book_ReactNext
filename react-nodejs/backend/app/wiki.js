@@ -145,26 +145,37 @@ const allowCORS = function (req, res, next) {
     const origin = req.headers['origin'];
     console.log('origin: ', origin);
 
-    // リファラの確認
+    // リファラの確認(クライアント側がリファラ設定を許可していない場合がある)
     const referer = req.headers['referer'] ?? 'No referrer';
     console.log(`[Referrer] ${referer}`);
 
     // CORS経由のアクセスの場合, Originヘッダが必ず存在する
     if (!(origin == null)) {
-        // CORSの許可 (Access-Control-Allow-Origin)
-        res.setHeader('Access-Control-Allow-Origin', origin);
+        /* Originヘッダを確認したので, 下記スコープはCORS */
+
+        // Access-Control-Allow-Origin : 許可するオリジンを設定
+        if (allowCrossOrigins.includes(origin)) {}   
+            res.setHeader('Access-Control-Allow-Origin', origin);
+        }
         // res.setHeader('Access-Control-Allow-Origin', '*'); // すべてのオリジンを許可(暫定)
 
-        // Set-Cookie, Set-Cookie2等のクレデンシャルなレスポンスヘッダを許可
+        // Access-Control-Allow-Credentials : クレデンシャルなヘッダの通信の可否
+        // Set-Cookie, Set-Cookie2, Authenticationなど
         res.setHeader('Access-Control-Allow-Credentials', allowCrossOriginCredentials);
 
-        // preflight以降のCORS経由で許可するヘッダーを設定
-        const acAllowhList = ["access-control-request-origin"];
+        // CORS経由でクライアント(ブラウザ)のリクエストに設定できるヘッダを指定
+        const acAllowhList = [];
         
-        // preflight config for cors
+        // [Preflight Request]
         if (req.method === 'OPTIONS') {
-            console.log('[OPTIONS] preflight request about CORS');
+            // [GET,POST,HEAD]以外: [PUT,DELETE,CONNECTION,OPTIONS,TRACE,PATCH]
+            // 下記以外のヘッダを持つ場合: 
+            // [1] Accept
+            // [2] Accept-Language 
+            // [3] Content-Language
+            // [4] Content-Type(text/plain,application/x-www-form-encoded,multipart/form-data)
 
+            console.log('[OPTIONS] preflight request about CORS');
             console.log('--- Setting Specific Response Headers for preflight request ---');
 
             // Access-Control-Request-Methodの確認
@@ -172,10 +183,13 @@ const allowCORS = function (req, res, next) {
             console.log(`[Access-Control-Request-Method] ${acrm}`);
 
             // Acces-Control-Allow-Methods(許可メソッド)を設定
-            if (allowCrossOriginMethods.includes(acrm)) {
-                // 該当すれば...設定
-                res.setHeader('Access-Control-Allow-Methods', acrm);
-            }
+            // Point. サーバ側の権限で許可メソッドを指定する.
+            // if (allowCrossOriginMethods.includes(acrm)) {
+            //     // 該当すれば...設定
+            //     res.setHeader('Access-Control-Allow-Methods', acrm);
+            // }
+            const acrms = allowCrossOriginMethods.join(',');
+            res.setHeader('Acess-Control-Allow-Methods', acrms);
             
             // Access-Control-Request-Headersの確認
             const acrhs = req.headers['access-control-request-headers'];
@@ -183,11 +197,12 @@ const allowCORS = function (req, res, next) {
             const acRequesthList = acrhs.split(',');
             
             /* Access-Control-Allow-Headersでブラウザに許可するヘッダ-を追加する */
+            // CORS通信確立後にクライアントからのリクエストのヘッダに許可を出す
             // 下記はデフォルトで許可されている
             // Accept
             // Accept-Encoding
             // Accept-Language
-            // Content-Type(application/x-www-form-urlencoded, multipart/form-data, text/plain)
+            // Content-Type(text/plain, application/x-www-form-urlencoded, multipart/form-data)
             for (const allowHeader of allowCrossOriginHeaders) {
                 if (acRequesthList.includes(allowHeader)) {
                     // 該当すれば...設定
@@ -200,7 +215,13 @@ const allowCORS = function (req, res, next) {
 
             // Access-Control-Allow-HeadersがCORS確立後に送信したいヘッダを示すのに対して,
             // Access-Control-Expose-Headerは, サーバ側が設定したヘッダをブラウザ側が読み出せるようにする.
-            // 基本的にAccess-Content-Allow-Headersと同じでよい.
+            // 下記以外のヘッダがある場合,設定する
+            // [1] Cache-Control
+            // [2] Content-Language
+            // [3] Content-Type(text/plain, application/x-www-form-urlencoded, multipart/form-data)
+            // [4] Expires
+            // [5] Last-Modified
+            // [6] Params
             console.log('[Access-Control-Expose-Headers', acAllowHeaders);
             res.setHeader('Access-Control-Expose-Headers', acAllowHeaders);
 
@@ -212,7 +233,7 @@ const allowCORS = function (req, res, next) {
             console.log('[allowCORS] ---------- Send 200 to browser ---------- ');
 
             return res.status(200).send();
-        }
+        } // if (req.method === 'OPTIONS') {
 
         // Access-Control-Allow-Headersでブラウザに許可するヘッダ-を追加する(preflight以降も必要)
         const acAllowHeaders = acAllowhList.join(',');
