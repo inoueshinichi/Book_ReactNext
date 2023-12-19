@@ -8,8 +8,12 @@
 # testing
 /coverage
 
-# production
-/public/bundle
+# compile
+/packages/frontend/dst
+
+# bundle
+/packages/frontend/public/static
+
 
 # misc
 .DS_Store
