@@ -31,7 +31,7 @@ module.exports = {
                 ],
                 exclude: [
                     /node_modules/,
-                    /src\/app\/sass/
+                    /src\/app\/sass/,
                     /src\/app\/scss/,
 
                 ],

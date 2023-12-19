@@ -1,6 +1,11 @@
 // Scaffold of App
 
 function App() {
+    const users = [
+        'alpha', 'beta', 'gamma', 'delta'
+    ];
+
+
     return (
         <div className="App">
             <header className="App-header">
@@ -16,6 +21,18 @@ function App() {
                     Learn React
                 </a>
             </header>
+
+            <div className="App-body">
+                <ul>
+                    {users.map((user) => {
+                        return <li key={user}>{user}</li>
+                    })}
+                </ul>
+                <form>
+                    <input type="text" />
+                    <button type="submit">追加</button>
+                </form>
+            </div>
         </div>
     );
 }
