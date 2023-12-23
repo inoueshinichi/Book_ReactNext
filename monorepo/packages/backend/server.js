@@ -249,11 +249,10 @@ app.post('/api/post', cors(corsOptions), async (req, res) => {
     console.log('[Request Method]', req.method);
     console.log('[Request Headers]', req.headers);
 
-    console.log('----- JSON -----');
-    const jsonObj = req.body;
-    const jsonStr = JSON.stringify(jsonObj);
-    console.log(jsonObj);
-    console.log(jsonStr);
-
-    res.status(200).json({ status: true });
+    try {
+        await usersHandler.setUser(req);
+        res.status(200).json({ status: true });
+    } catch (err) {
+        throw new BadRequest('[Fail] setUser()');
+    }
 });

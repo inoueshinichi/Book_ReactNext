@@ -5,7 +5,8 @@
   "scripts": {
     "compile": "npx tsc -p tsconfig.json",
     "compile-watch": "npx tsc -p tsconfig.json --watch",
-    "bundle": "npx webpack build -c webpack.config.js --progress --stats verbose"
+    "bundle": "npx webpack build -c webpack.config.js --progress --stats verbose",
+    "start": "node web_server.js"
   },
   "devDependencies": {
     "@babel/core": "^7.23.6",
@@ -13,9 +14,12 @@
     "@babel/preset-react": "^7.23.3",
     "@babel/preset-typescript": "^7.23.3",
     "@types/eslint": "^8.44.9",
+    "@types/express": "^4.17.21",
+    "@types/http-proxy-middleware": "^1.0.0",
     "@types/jest": "^29.5.11",
     "@types/js-cookie": "^3.0.6",
     "@types/marked": "^6.0.0",
+    "@types/multer": "^1.4.11",
     "@types/node": "^20.10.4",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
@@ -42,8 +46,10 @@
   },
   "dependencies": {
     "html-react-parser": "^5.0.7",
+    "http-proxy-middleware": "^2.0.6",
     "js-cookie": "^3.0.5",
     "marked": "^11.1.0",
+    "multer": "^1.4.5-lts.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",

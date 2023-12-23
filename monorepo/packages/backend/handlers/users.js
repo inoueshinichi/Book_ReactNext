@@ -1,5 +1,16 @@
 const redis = require("../lib/redis");
 
+const setUser = async (req) => {
+    console.log('----- JSON -----');
+    const jsonObj = req.body; // { id: number; name: string }
+    console.log('Posted Json Object:', jsonObj);
+
+    const { id, name } = jsonObj;
+    await redis.getClient().set(`users:${id}`, JSON.stringify({ id: id, name: name}));
+};
+
+exports.setUser = setUser;
+
 const getUser = async (req) => {
     const key = `users:${req.params.id}`;
     // Promise<Reject>を返すとそのまま, throw Errorを上位にロールバックする
