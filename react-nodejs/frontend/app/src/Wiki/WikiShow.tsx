@@ -85,7 +85,7 @@ class WikiShow extends React.Component<WikiShowProps, WikiShowState> {
 
         let reqHeaders = new Headers();
         reqHeaders.set('Content-Type', 'application/json');
-        reqHeaders.set('Access-Control-Request-Origin', this.serverStaticUrl);
+        // reqHeaders.set('Access-Control-Request-Origin', this.serverStaticUrl);
 
         // fetch API
         fetch(url, {

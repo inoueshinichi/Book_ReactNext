@@ -13,10 +13,17 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom/client';
 
+type UserProfile = {
+    origin: string;
+    userid: string;
+    passwd: string;
+};
+
 // ログイン画面
 function SNSLogin() {
 
-    const [userProfile, setUserProfile] = useState({
+    const [userProfile, setUserProfile] = useState<UserProfile>({
+        origin: '',
         userid: '',
         passwd: '',
     });
@@ -48,6 +55,16 @@ function SNSLogin() {
     const handleSignup = (e: React.MouseEvent<HTMLButtonElement>) => {
         // サインアップ画面に遷移
     };
+
+
+    useLayoutEffect(() => {
+        const XHR = new XMLHttpRequest();
+        XHR.open('GET', userProfile.origin, /*非同期*/true);
+        XHR.withCredentials = true; // Cookieと認証ヘッダーを許可
+        XHR.setRequestHeader('Access-Control-Request-Methods', 'GET');
+        XHR.setRequestHeader('Content-Type', 'application/json');
+        
+    }, []);
 
     
 

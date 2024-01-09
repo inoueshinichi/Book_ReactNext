@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "react-sns",
+  "name": "backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,10 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "workspace": "^0.0.1-preview.1"
-  },
-  "workspaces": [
-    "frontend/*",
-    "backend/*"
-  ]
+    "cors": "^2.8.5",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2"
+  }
 }

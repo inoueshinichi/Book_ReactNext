@@ -154,7 +154,7 @@ const allowCORS = function (req, res, next) {
         /* Originヘッダを確認したので, 下記スコープはCORS */
 
         // Access-Control-Allow-Origin : 許可するオリジンを設定
-        if (allowCrossOrigins.includes(origin)) {}   
+        if (allowCrossOrigins.includes(origin)) {
             res.setHeader('Access-Control-Allow-Origin', origin);
         }
         // res.setHeader('Access-Control-Allow-Origin', '*'); // すべてのオリジンを許可(暫定)
