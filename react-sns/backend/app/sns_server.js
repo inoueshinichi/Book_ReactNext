@@ -160,7 +160,7 @@ app.post('/api/adduser', async (req, res) => {
 
     try {
         // ユーザ情報の取得
-        let userInfo = await account.getUer(userid, passwd);
+        let userInfo = await account.getUser(userid, passwd);
 
         if (!(userInfo == null)) {
             console.log('既に登録済みのユーザ');
