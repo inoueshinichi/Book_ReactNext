@@ -102,24 +102,25 @@ app.set('view engine', 'ejs');
 // ブラウザのURLリクエストに対して返信(公開)したいhtmlファイル,
 // ディレクトリを指定する. ※ ReactRouterで指定されるURLに対して同じindex.htmlを返すようにする.
 app.use('/', express.static('./public'));
-app.use('/login', express.static('./public'))
+app.use('/login', express.static('./public'));
 app.use('/signup', express.static('./public'));
 app.use('/users', express.static('./public'));
 app.use('/timeline', express.static('./public'));
 
 // ------------------------------------
-const db = require('./db');
+const db = require('./db'); // PostgreSQL
+const redis = require('./redis'); // Redis
 
 
 // DB接続
-const redisClient = db.connectRedis();
+const redisClient = redis.connectRedis();
 const postgreClient = db.connectPostgre();
 
 redisClient.once('ready', async () => {
     console.log("[Initialization]");
     try {
         // 初期化
-        await db.initRedisDB();
+        await redis.initRedisDB();
         await db.initPostgreDB();
 
         // サーバ起動
@@ -143,14 +144,15 @@ redisClient.on('error', (e) => {
 
 /* ----- APIを定義 ----- */
 
-// ユーザの追加
+// ユーザの追加(OK)
 app.post('/api/adduser', async (req, res) => {
 
     // クエリ
     const userid = req.query.userid;
     const passwd = req.query.passwd;
+    const username = req.query.username;
 
-    if (userid === '' || passwd === '') {
+    if (userid === '' || passwd === '' || username === '') {
         console.log('[Server] パラメータが空です');
         return res.json({
             status: false,
@@ -160,7 +162,8 @@ app.post('/api/adduser', async (req, res) => {
 
     try {
         // ユーザ情報の取得
-        let userInfo = await account.getUser(userid, passwd);
+        let userInfo = await account.getUser(userid);
+        // console.log('userInfo', userInfo);
 
         if (!(userInfo == null)) {
             console.log('既に登録済みのユーザ');
@@ -171,7 +174,7 @@ app.post('/api/adduser', async (req, res) => {
         }
 
         // 新規追加
-        userInfo = await account.setUser(userid, passwd);
+        userInfo = await account.setUser(userid, passwd, username);
         console.log('[Server] 新規ユーザを追加しました');
         console.log('userInfo', userInfo);
         return res.json({
@@ -181,6 +184,7 @@ app.post('/api/adduser', async (req, res) => {
 
     } catch (e) {
         console.log('PostgreDBのアクセスに失敗');
+        console.error(e);
         return res.json({
             status: false,
             msg: 'PostgreDBのアクセスに失敗'
@@ -188,7 +192,7 @@ app.post('/api/adduser', async (req, res) => {
     }
 });
 
-// ユーザログインを成功したら認証トークンを返す
+// ユーザログインを成功したら認証トークンを返す(OK)
 app.get('/api/login', async (req, res) => {
 
     // クエリ
@@ -198,11 +202,12 @@ app.get('/api/login', async (req, res) => {
     try {
         // DBのUser情報を参照
         const token = await account.loginUser(userid, passwd);
+        console.log('token', token);
 
         // ログイン成功時に認証トークンをブラウザに返す
         return res.json({
             status: true,
-            token
+            token: token
         });
     } catch (e) {
         // ログイン失敗
@@ -214,36 +219,35 @@ app.get('/api/login', async (req, res) => {
     }
 });
 
-// ユーザに友達を追加する
-app.post('/api/add_friend', async (req, res) => {
+// ユーザ情報を返す(OK)
+app.get('/api/get_user', async (req, res) => {
 
     // クエリ
     const userid = req.query.userid;
     const token = req.query.token;
-    const friendid = req.query.friendid;
 
-    // 認証
+    // 認可
     const isSuccess = await account.checkToken(userid, token);
     if (!isSuccess) {
-        console.log('DB認証エラー', e);
+        console.log('認可トークンエラー', e);
         res.json({
             status: false,
-            msg: 'DB認証エラー'
+            msg: '認可トークンエラー'
         });
     }
 
-    // 友達を追加
     try {
-        await account.addUserFriend(userid, friendid);
-        console.log('友達登録完了')
+        const userInfo = await account.getUser(userid);
+        console.log(`[Success] getUser(${userid})`);
         return res.json({
-            status: true
+            status: true,
+            userInfo: userInfo
         });
     } catch (e) {
-        console.log(`既に友達登録済みです. UserID: ${userid}, FriendID: ${friendid}`);
+        console.log('ユーザ情報の取得失敗', e);
         return res.json({
             status: false,
-            msg: '既に友達登録済み'
+            msg: 'ユーザ情報の取得失敗'
         });
     }
 });
@@ -255,49 +259,143 @@ app.get('/api/get_allusers', async (req, res) => {
     const userid = req.query.userid;
     const token = req.query.token;
 
-    // 認証
+    // 認可
     const isSuccess = await account.checkToken(userid, token);
     if (!isSuccess) {
-        console.log('DB認証エラー', e);
+        console.log('認可トークンエラー', e);
         res.json({
             status: false,
-            msg: 'DB認証エラー'
+            msg: '認可トークンエラー'
         });
     }
 
     try {
         const userInfoList = await account.getUsers();
-        const userIdList = userInfoList.map(userInfo => userInfo.userid);
+        console.log('userInfoList', userInfoList);
+        const userIdList = userInfoList.map(userInfo => userInfo.user_id);
         console.log(`User ID List: ${userIdList}`);
         return res.json({
             status: true,
             userIdList
         });
     } catch (e) {
-        // ログイン失敗
-        console.log('友達情報の取得失敗', e);
+        console.log('ユーザ情報の取得失敗', e);
         return res.json({
             status: false,
-            msg: '友達情報の取得失敗'
+            msg: 'ユーザ情報の取得失敗'
         });
     }
 });
 
-// // 自分のタイムラインにコメントを書き込む
-// app.post('/api/add_timeline', async (req, res) => {
-//     console.log("未実装");
-// });
+// 自分のタイムラインのコメントを読み出す
+app.get('/api/get_timeline', async (req, res) => {
 
-// // 自分と友達のタイムラインを返す
-// app.get('/api/get_friends_timeline', async (req, res) => {
-//     console.log("未実装");
-// });
+    const userid = req.query.userid;
+    const token = req.query.token;
 
-// // ユーザ情報(友達一覧)を返す
-// app.get('/api/get_user', async (req, res) => {
+    // 認可
+    const isSuccess = await account.checkToken(userid, token);
+    if (!isSuccess) {
+        console.log('認可トークンエラー', e);
+        res.json({
+            status: false,
+            msg: '認可トークンエラー'
+        });
+    }
+
+    let timelineList = null;
+
+    try {
+        timelineList = await account.getTimeline(userid);
+        console.log(`UserId: ${userid}, Timeline: `, timelineList);
+        return res.json({
+            status: true,
+            timelineList
+        });
+    } catch (e) {
+        console.log('ユーザ情報の取得失敗', e);
+        return res.json({
+            status: false,
+            msg: 'ユーザ情報の取得失敗'
+        });
+    }
+});
+
+// 自分のタイムラインにコメントを書き込む
+app.post('/api/add_timeline', async (req, res) => {
+    
+    const userid = req.query.userid;
+    const token = req.query.token;
+    const comment = req.query.comment;
+
+    // 認可
+    const isSuccess = await account.checkToken(userid, token);
+    if (!isSuccess) {
+        console.log('認可トークンエラー', e);
+        res.json({
+            status: false,
+            msg: '認可トークンエラー'
+        });
+    }
+
+    let retComment = "コメントを投稿できませんでした."
+
+    try {
+        retComment = await account.addTimeline(userid, comment);
+        return res.json({
+            status: true,
+            msg: retComment
+        });
+    } catch (e) {
+        console.log('ユーザ情報の取得失敗', e);
+        return res.json({
+            status: false,
+            msg: retComment
+        });
+    }
+
+    
+});
+
+// // ユーザに友達を追加する
+// app.post('/api/add_friend', async (req, res) => {
 
 //     // クエリ
 //     const userid = req.query.userid;
+//     const token = req.query.token;
+//     const friendid = req.query.friendid;
+//     const friendname = req.query.friendname;
 
+//     // 認証
+//     const isSuccess = await account.checkToken(userid, token);
+//     if (!isSuccess) {
+//         console.log('DB認証エラー', e);
+//         res.json({
+//             status: false,
+//             msg: 'DB認証エラー'
+//         });
+//     }
+
+//     // 友達を追加
+//     try {
+//         await account.addUserFriend(userid, friendid, friendname);
+//         console.log('友達登録完了')
+//         return res.json({
+//             status: true
+//         });
+//     } catch (e) {
+//         console.log(`既に友達登録済みです. UserID: ${userid}, FriendID: ${friendid}`);
+//         return res.json({
+//             status: false,
+//             msg: '既に友達登録済み'
+//         });
+//     }
+// });
+
+
+
+
+// // 自分と友達のタイムラインを返す
+// app.get('/api/get_friends_timeline', async (req, res) => {
 //     console.log("未実装");
 // });
