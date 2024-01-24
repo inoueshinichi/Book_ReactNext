@@ -75,11 +75,7 @@ const initPostgreDB = async () => {
 
     try {
         // Insert
-        const jsonbArray = [
-            {
-            '20240110': true
-            },
-        ];
+        const friends = {};
         await pg.any("INSERT INTO $1:name \
             (user_id, name, hash, token, friends, register_date) \
             VALUES (\
@@ -89,7 +85,7 @@ const initPostgreDB = async () => {
                 '5678',\
                  $2:json,\
                 '2024-01-10'\
-                )", [tablename, jsonbArray]);
+                )", [tablename, friends]);
     } catch (e) {
         console.error(e);
     }

@@ -58,13 +58,21 @@ exports.getUsers = getUsers;
 async function setUser(userid, passwd, name) {
     const hash = getHash(passwd);
     const token = null;
-    const friends = 0;
+    const friends = {};
     const date = new Date();
-    const record = await db.getClient().any('INSERT INTO $1:name \
+    await db.getClient().any('INSERT INTO $1:name \
     (user_id, name, hash, token, friends, register_date) \
     VALUES ($2,$3,$4,$5,$6,$7)',
         [db.tablename, userid, name, hash, token, friends, date]);
-    return record;
+
+    return {
+        userid: userid,
+        name: name,
+        hash: hash,
+        token: token,
+        friends: friends,
+        date: date
+    };
 }
 exports.setUser = setUser;
 
@@ -81,14 +89,17 @@ async function loginUser(userid, passwd) {
                                             FROM $1:name \
                                             WHERE user_id = $2',
             [db.tablename, userid]);
+        dbHash = dbHash[0].hash; // [{ hash: "~"}]
     } catch (e) {
         console.error(e);
     }
 
+    console.log('IN hash: ', hash);
+    console.log('DB hash: ', dbHash);
     if (hash === dbHash) {
         // 認証トークンを更新
         await db.getClient().any('UPDATE $1:name \
-                                    SET token = $2:name \
+                                    SET token = $2 \
                                     WHERE user_id = $3',
             [db.tablename, token, userid]);
     }
@@ -137,7 +148,45 @@ exports.addTimeline = addTimeline;
 
 // 友人情報を追加する
 async function addUserFriend(userid, friendid) {
-    
+    let retVal = false;
+    // 友人情報を追加(更新する)
+    try {
+        // 検索(更新前)
+        let friendsColumn = await db.getClient().any('SELECT friends \
+                                                        FROM $1:name \
+                                                        WHERE user_id = $2',
+            [db.tablename, userid]);
+
+        console.log('===== 更新前 =====');
+        console.log(`friendsColumn: `, friendsColumn);
+        let obj = friendsColumn[0];
+        console.log('obj.friends: ', obj.friends);
+        console.log('Object.keys(obj.friends): ', Object.keys(obj.friends));
+
+        if (!(friendid in Object.keys(obj.friends))) {
+            // 更新
+            await db.getClient().any('UPDATE $1:name \
+                                SET friends = friends::jsonb || json_build_object($2, true)::jsonb \
+                                WHERE user_id = $3',
+                [db.tablename, friendid, userid]);
+            retVal = true;
+
+        }
+
+        // 検索(更新後)
+        friendsColumn = await db.getClient().any('SELECT friends \
+                                                FROM $1:name \
+                                                WHERE user_id = $2',
+            [db.tablename, userid]);
+
+        console.log('===== 更新後 =====');
+        console.log(`friendsColumn: `, friendsColumn);
+        obj = friendsColumn[0];
+        console.log('obj.friends: ', obj.friends);
+    } catch (e) {
+        console.error(e);
+    }
+    return retVal;
 }
 exports.addUserFriend = addUserFriend;
 

@@ -163,9 +163,9 @@ app.post('/api/adduser', async (req, res) => {
     try {
         // ユーザ情報の取得
         let userInfo = await account.getUser(userid);
-        // console.log('userInfo', userInfo);
+        console.log('userInfo', userInfo);
 
-        if (!(userInfo == null)) {
+        if (userInfo.length !== 0) {
             console.log('既に登録済みのユーザ');
             return res.json({
                 status: false,
@@ -174,9 +174,9 @@ app.post('/api/adduser', async (req, res) => {
         }
 
         // 新規追加
-        userInfo = await account.setUser(userid, passwd, username);
+        const registeredUserInfo = await account.setUser(userid, passwd, username);
         console.log('[Server] 新規ユーザを追加しました');
-        console.log('userInfo', userInfo);
+        console.log('registeredUserInfo', registeredUserInfo);
         return res.json({
             status: true,
             msg: '新規ユーザを追加しました'
@@ -229,7 +229,7 @@ app.get('/api/get_user', async (req, res) => {
     // 認可
     const isSuccess = await account.checkToken(userid, token);
     if (!isSuccess) {
-        console.log('認可トークンエラー', e);
+        console.log('認可トークンエラー');
         res.json({
             status: false,
             msg: '認可トークンエラー'
@@ -262,7 +262,7 @@ app.get('/api/get_allusers', async (req, res) => {
     // 認可
     const isSuccess = await account.checkToken(userid, token);
     if (!isSuccess) {
-        console.log('認可トークンエラー', e);
+        console.log('認可トークンエラー');
         res.json({
             status: false,
             msg: '認可トークンエラー'
@@ -296,7 +296,7 @@ app.get('/api/get_timeline', async (req, res) => {
     // 認可
     const isSuccess = await account.checkToken(userid, token);
     if (!isSuccess) {
-        console.log('認可トークンエラー', e);
+        console.log('認可トークンエラー');
         res.json({
             status: false,
             msg: '認可トークンエラー'
@@ -331,7 +331,7 @@ app.post('/api/add_timeline', async (req, res) => {
     // 認可
     const isSuccess = await account.checkToken(userid, token);
     if (!isSuccess) {
-        console.log('認可トークンエラー', e);
+        console.log('認可トークンエラー');
         res.json({
             status: false,
             msg: '認可トークンエラー'
@@ -358,39 +358,39 @@ app.post('/api/add_timeline', async (req, res) => {
 });
 
 // // ユーザに友達を追加する
-// app.post('/api/add_friend', async (req, res) => {
+app.post('/api/add_friend', async (req, res) => {
 
-//     // クエリ
-//     const userid = req.query.userid;
-//     const token = req.query.token;
-//     const friendid = req.query.friendid;
-//     const friendname = req.query.friendname;
+    // クエリ
+    const userid = req.query.userid;
+    const token = req.query.token;
+    const friendid = req.query.friendid;
 
-//     // 認証
-//     const isSuccess = await account.checkToken(userid, token);
-//     if (!isSuccess) {
-//         console.log('DB認証エラー', e);
-//         res.json({
-//             status: false,
-//             msg: 'DB認証エラー'
-//         });
-//     }
+    // 認可
+    let isSuccess = await account.checkToken(userid, token);
+    if (!isSuccess) {
+        console.log('認可トークンエラー');
+        res.json({
+            status: false,
+            msg: '認可トークンエラー'
+        });
+    }
 
-//     // 友達を追加
-//     try {
-//         await account.addUserFriend(userid, friendid, friendname);
-//         console.log('友達登録完了')
-//         return res.json({
-//             status: true
-//         });
-//     } catch (e) {
-//         console.log(`既に友達登録済みです. UserID: ${userid}, FriendID: ${friendid}`);
-//         return res.json({
-//             status: false,
-//             msg: '既に友達登録済み'
-//         });
-//     }
-// });
+    // 友達を追加
+    isSuccess = await account.addUserFriend(userid, friendid);
+    let msg = "";
+    if (isSuccess) {
+        console.log('友達登録完了');
+        msg = `友達追加. 友達ID: ${friendid}`
+    } else {
+        console.log(`既に友達登録済みです. UserID: ${userid}, FriendID: ${friendid}`);
+        msg = `既に友達登録済み. 友達ID: ${friendid}`
+    }
+
+    return res.json({
+        status: isSuccess,
+        msg: msg
+    })
+});
 
 
 
