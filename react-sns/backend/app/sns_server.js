@@ -292,6 +292,11 @@ app.get('/api/get_timeline', async (req, res) => {
 
     const userid = req.query.userid;
     const token = req.query.token;
+    let maxNum = req.query.maxNum;
+
+    if (maxNum == null) {
+        maxNum = 20; // 最大２０件を取得
+    }
 
     // 認可
     const isSuccess = await account.checkToken(userid, token);
@@ -306,8 +311,8 @@ app.get('/api/get_timeline', async (req, res) => {
     let timelineList = null;
 
     try {
-        timelineList = await account.getTimeline(userid);
-        console.log(`UserId: ${userid}, Timeline: `, timelineList);
+        timelineList = await account.getTimeline(userid, num);
+        console.log(`UserId: ${userid}, Timeline: (${num} lines)`, timelineList);
         return res.json({
             status: true,
             timelineList
@@ -353,8 +358,6 @@ app.post('/api/add_timeline', async (req, res) => {
             msg: retComment
         });
     }
-
-    
 });
 
 // // ユーザに友達を追加する
@@ -393,9 +396,41 @@ app.post('/api/add_friend', async (req, res) => {
 });
 
 
+// 友達のタイムラインを返す
+app.get('/api/get_friends_timeline', async (req, res) => {
+
+    const userid = req.query.userid;
+    const token = req.query.token;
+    const maxNum = req.query.maxnum;
 
 
-// // 自分と友達のタイムラインを返す
-// app.get('/api/get_friends_timeline', async (req, res) => {
-//     console.log("未実装");
-// });
+    // 認可
+    let isSuccess = await account.checkToken(userid, token);
+    if (!isSuccess) {
+        console.log('認可トークンエラー');
+        res.json({
+            status: false,
+            msg: '認可トークンエラー'
+        });
+    }
+
+    let retCommentList = ["コメントを投稿できませんでした."];
+
+    try {
+        // throw new Error("エラーチェック");
+
+        // 自分の友人のタイムラインを最大maxNum件毎取得.
+        retCommentList = 
+
+        return res.json({
+            status: true,
+            timelines: retCommentList
+        });
+    } catch (e) {
+        console.log('ユーザ情報の取得失敗', e);
+        return res.json({
+            status: false,
+            timelines: retCommentList
+        });
+    }
+});

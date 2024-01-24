@@ -113,7 +113,7 @@ exports.loginUser = loginUser;
 
 
 // タイムラインの取得 from Redis
-const getTimeline = async (userid) => {
+const getTimeline = async (userid, num) => {
     const stream = redis.getClient().scanStream({
         match: userid,
         count: 2
@@ -128,7 +128,7 @@ const getTimeline = async (userid) => {
             timelineList.push(...timeline);
         }
     }
-    return timelineList;
+    return timelineList.slice(0, num - 1);
 };
 exports.getTimeline = getTimeline;
 
@@ -192,21 +192,25 @@ exports.addUserFriend = addUserFriend;
 
 
 // // 友達のタイムラインを取得する
-// async function getFriendsTimeline(userid, token, num) {
-//     const isValid = checkToken(userid, token);
-//     if (!isValid) {
-//         return new Error("認証に失敗");
-//     }
+async function getFriendsTimeline(userid, token, num) {
 
-//     // 友人の一覧を取得
-//     const friends = [];
-//     const userInfo = await getUser(userid);
-//     for (const friend in userInfo['friends']) {
-//         friends.push(friend);
-//     }
-//     friends.push(userid); // 自分
+    /* 友人の一覧を取得 */
+    
+    // 検索
+    const friendsColumn = await db.getClient().any('SELECT friends \
+                                                FROM $1:name \
+                                                WHERE user_id = $2',
+        [db.tablename, userid]);
 
-//     // 友人のタイムラインを最大num件取得
+    const obj = friendsColumn[0];
 
-// }
-// exports.getFriendsTimeline = getFriendsTimeline;
+    // 友達IDのリスト
+    const friendIds = Object.keys(obj.friends);
+    friendIds.push(userid); // 自分も追加
+
+    // 友人のタイムラインを最大num件取得
+    for (const id of friendIds) {
+
+    }
+}
+exports.getFriendsTimeline = getFriendsTimeline;
