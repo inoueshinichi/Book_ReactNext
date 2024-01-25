@@ -420,7 +420,7 @@ app.get('/api/get_friends_timeline', async (req, res) => {
         // throw new Error("エラーチェック");
 
         // 自分の友人のタイムラインを最大maxNum件毎取得.
-        retCommentList = 
+        retCommentList = await account.getFriendsTimeline(userid, maxNum);
 
         return res.json({
             status: true,

@@ -192,7 +192,7 @@ exports.addUserFriend = addUserFriend;
 
 
 // // 友達のタイムラインを取得する
-async function getFriendsTimeline(userid, token, num) {
+async function getFriendsTimeline(userid, num) {
 
     /* 友人の一覧を取得 */
     
@@ -209,8 +209,12 @@ async function getFriendsTimeline(userid, token, num) {
     friendIds.push(userid); // 自分も追加
 
     // 友人のタイムラインを最大num件取得
+    const timelines = [];
     for (const id of friendIds) {
-
+        // 各フレンド毎に再々num件のタイムラインを取得
+        const timeline = getTimeline(id, num);
+        timelines.push(timeline);
     }
+    return timelines;
 }
 exports.getFriendsTimeline = getFriendsTimeline;

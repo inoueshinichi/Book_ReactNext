@@ -75,17 +75,58 @@ const initPostgreDB = async () => {
 
     try {
         // Insert
-        const friends = {};
+        let friends = {};
+
+        // ユーザー1 (20240110)
+        friends = { "20240120": true };
         await pg.any("INSERT INTO $1:name \
             (user_id, name, hash, token, friends, register_date) \
             VALUES (\
                 20240110,\
+                'minitani',\
+                '0',\
+                '0',\
+                $2:json,\
+                $3\
+                )", [tablename, friends, (new Date())]);
+
+        // ユーザー2 (20240120)
+        await pg.any("INSERT INTO $1:name \
+            (user_id, name, hash, token, friends, register_date) \
+            VALUES (\
+                20240120,\
                 'inoue',\
-                '1234',\
-                '5678',\
-                 $2:json,\
-                '2024-01-10'\
-                )", [tablename, friends]);
+                '0',\
+                '0',\
+                $2:json,\
+                $3\
+                )", [tablename, friends, (new Date())]);
+
+        // ユーザー3 (20240124)
+        friends = { "20240110": true, "20240120": true }
+        await pg.any("INSERT INTO $1:name \
+            (user_id, name, hash, token, friends, register_date) \
+            VALUES (\
+                20240124,\
+                'blandcar',\
+                '0',\
+                '0',\
+                $2:json,\
+                $3\
+                )", [tablename, friends, (new Date())]);
+
+        // ユーザー4 (20240125)
+        friends = { "20240110": true, "20240120": true, "20240124": true };
+        await pg.any("INSERT INTO $1:name \
+            (user_id, name, hash, token, friends, register_date) \
+            VALUES (\
+                20240125,\
+                'pokemon',\
+                '0',\
+                '0',\
+                $2:json,\
+                $3\
+                )", [tablename, friends, (new Date())]);
     } catch (e) {
         console.error(e);
     }
