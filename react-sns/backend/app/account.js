@@ -82,27 +82,30 @@ async function loginUser(userid, passwd) {
     const token = getAuthToken(userid);
     console.log(`userid: ${userid}, hash: ${hash}, token: ${token}`);
 
-    let dbHash = null;
+    // ログインユーザのハッシュを登録
     try {
         // ログインユーザのハッシュを比較する
-        dbHash = await db.getClient().any('SELECT hash \
-                                            FROM $1:name \
-                                            WHERE user_id = $2',
-            [db.tablename, userid]);
-        dbHash = dbHash[0].hash; // [{ hash: "~"}]
+        await db.getClient().any('UPDATE $1:name \
+                                    SET hash = $2 \
+                                    WHERE user_id = $3',
+            [db.tablename, hash, userid]);
     } catch (e) {
         console.error(e);
+        const dbToken = await db.getClient().any('SELECT token \
+                                                    FROM $1:name \
+                                                    WHERE user_id = $2',
+            [db.tablename, userid]);
+        console.log(`user_id: ${userid}, dbToken: ${dbToken}`);
+        return new Error(`ユーザ ${userid} : 登録されていません.`);
     }
 
-    console.log('IN hash: ', hash);
-    console.log('DB hash: ', dbHash);
-    if (hash === dbHash) {
-        // 認証トークンを更新
-        await db.getClient().any('UPDATE $1:name \
-                                    SET token = $2 \
-                                    WHERE user_id = $3',
-            [db.tablename, token, userid]);
-    }
+
+    // 認可トークンを更新
+    await db.getClient().any('UPDATE $1:name \
+                                SET token = $2 \
+                                WHERE user_id = $3',
+        [db.tablename, token, userid]);
+
 
     // 更新したDBの認証トークンを取得(念のため)
     userInfo = await getUser(userid);
@@ -113,7 +116,7 @@ exports.loginUser = loginUser;
 
 
 // タイムラインの取得 from Redis
-const getTimeline = async (userid, num) => {
+const getTimeline = async (userid, maxNum) => {
     const stream = redis.getClient().scanStream({
         match: userid,
         count: 2
@@ -128,7 +131,7 @@ const getTimeline = async (userid, num) => {
             timelineList.push(...timeline);
         }
     }
-    return timelineList.slice(0, num - 1);
+    return timelineList.slice(0, maxNum - 1);
 };
 exports.getTimeline = getTimeline;
 
@@ -146,7 +149,7 @@ const addTimeline = async (userid, comment) => {
 };
 exports.addTimeline = addTimeline;
 
-// 友人情報を追加する
+// 友達情報を追加する
 async function addUserFriend(userid, friendid) {
     let retVal = false;
     // 友人情報を追加(更新する)
@@ -190,30 +193,81 @@ async function addUserFriend(userid, friendid) {
 }
 exports.addUserFriend = addUserFriend;
 
+// 友達情報を削除する
+async function removeUserFriend(userid, friendid) {
+    let retVal = false;
+    // 友人情報を削除(更新する)
+    try {
+        // 検索(更新前)
+        let friendsColumn = await db.getClient().any('SELECT friends \
+                                                        FROM $1:name \
+                                                        WHERE user_id = $2',
+            [db.tablename, userid]);
+
+        console.log('===== 更新前 =====');
+        console.log(`friendsColumn: `, friendsColumn);
+        let obj = friendsColumn[0];
+        console.log('obj.friends: ', obj.friends);
+        console.log('Object.keys(obj.friends): ', Object.keys(obj.friends));
+
+        if (Object.keys(obj.friends).includes(friendid)) {
+            console.log(`[Update] Delete ${friendid}`);
+
+            // 更新
+            await db.getClient().any('UPDATE $1:name \
+                                SET friends = friends #- $2 \
+                                WHERE user_id = $3',
+                [db.tablename, `{${friendid}}`, userid]);
+            retVal = true;
+        }
+
+        // 検索(更新後)
+        friendsColumn = await db.getClient().any('SELECT friends \
+                                                FROM $1:name \
+                                                WHERE user_id = $2',
+            [db.tablename, userid]);
+
+        console.log('===== 更新後 =====');
+        console.log(`friendsColumn: `, friendsColumn);
+        obj = friendsColumn[0];
+        console.log('obj.friends: ', obj.friends);
+    } catch (e) {
+        console.error(e);
+    }
+    return retVal;
+}
+exports.removeUserFriend = removeUserFriend;
 
 // // 友達のタイムラインを取得する
-async function getFriendsTimeline(userid, num) {
+async function getFriendsTimeline(userid, maxNum) {
 
-    /* 友人の一覧を取得 */
-    
+    /* 友人の一覧を取得(PostgreDBにアクセス) */
+
     // 検索
     const friendsColumn = await db.getClient().any('SELECT friends \
                                                 FROM $1:name \
                                                 WHERE user_id = $2',
         [db.tablename, userid]);
 
+    console.log('friendsColumn', friendsColumn);
     const obj = friendsColumn[0];
+    console.log('obj', obj);
 
     // 友達IDのリスト
-    const friendIds = Object.keys(obj.friends);
-    friendIds.push(userid); // 自分も追加
+    const friendIds = Object.entries(obj.friends);
+    friendIds.push({ [userid]: true}); // 自分も追加
 
-    // 友人のタイムラインを最大num件取得
+    console.log('friendIds', friendIds);
+
+    // 友人のタイムラインを最大num件取得 (RedisKVSにアクセス)
     const timelines = [];
     for (const id of friendIds) {
-        // 各フレンド毎に再々num件のタイムラインを取得
-        const timeline = getTimeline(id, num);
-        timelines.push(timeline);
+        // 表示許可の友達だけ取得
+        if (id.userid) {
+            // 各フレンド毎に再々num件のタイムラインを取得
+            const timeline = await getTimeline(id, maxNum);
+            timelines.push(timeline);
+        }
     }
     return timelines;
 }

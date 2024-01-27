@@ -311,8 +311,8 @@ app.get('/api/get_timeline', async (req, res) => {
     let timelineList = null;
 
     try {
-        timelineList = await account.getTimeline(userid, num);
-        console.log(`UserId: ${userid}, Timeline: (${num} lines)`, timelineList);
+        timelineList = await account.getTimeline(userid, maxNum);
+        console.log(`UserId: ${userid}, Timeline: (${maxNum} lines)`, timelineList);
         return res.json({
             status: true,
             timelineList
@@ -392,6 +392,40 @@ app.post('/api/add_friend', async (req, res) => {
     return res.json({
         status: isSuccess,
         msg: msg
+    });
+});
+
+// ユーザーから友達を削除する
+app.del('/api/remove_friend', async (req, res) => {
+
+    const userid = req.query.userid;
+    const token = req.query.token;
+    const friendid = req.query.friendid;
+
+    // 認可
+    let isSuccess = await account.checkToken(userid, token);
+    if (!isSuccess) {
+        console.log('認可トークンエラー');
+        res.json({
+            status: false,
+            msg: '認可トークンエラー'
+        });
+    }
+
+    // 友達を削除する
+    isSuccess = await account.removeUserFriend(userid, friendid);
+    let msg = "";
+    if (isSuccess) {
+        console.log('友達削除完了');
+        msg = `友達削除. 友達ID: ${friendid}`
+    } else {
+        console.log(`既に友達削除済みです. UserID: ${userid}, FriendID: ${friendid}`);
+        msg = `既に友達削除済み. 友達ID: ${friendid}`
+    }
+
+    return res.json({
+        status: isSuccess,
+        msg: msg
     })
 });
 
@@ -401,7 +435,7 @@ app.get('/api/get_friends_timeline', async (req, res) => {
 
     const userid = req.query.userid;
     const token = req.query.token;
-    const maxNum = req.query.maxnum;
+    const maxNum = req.query.maxnum ?? 20;
 
 
     // 認可
