@@ -13,8 +13,9 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom/client';
 
+import { snsServerConfig } from '../snsServerConfig';
+
 type UserProfile = {
-    origin: string;
     userid: string;
     passwd: string;
 };
@@ -23,7 +24,6 @@ type UserProfile = {
 function SNSLogin() {
 
     const [userProfile, setUserProfile] = useState<UserProfile>({
-        origin: '',
         userid: '',
         passwd: '',
     });
@@ -31,7 +31,52 @@ function SNSLogin() {
     const [message, setMessage] = useState<string>('');
 
     const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
+        // クエリ作成
+        const urlSearchParams = new URLSearchParams();
+        urlSearchParams.append('userid', userProfile.userid);
+        urlSearchParams.append('passwd', userProfile.passwd);
 
+        // URL作成
+        const url: string = snsServerConfig.origin + '/' + urlSearchParams.toString();
+
+        // XHR (CORS許可)
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, /*非同期*/true);
+        xhr.withCredentials = true; // Cookieと認証ヘッダーを許可
+        xhr.setRequestHeader('Access-Control-Request-Methods', 'GET');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        // コールバック
+        xhr.onload = (e) => {
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) {
+                    console.log(`[SUCCESS] ${xhr.status} to ${url}`);
+                    // responseType: "blob", "document", "json", "text"
+                    if (xhr.responseType == "json") {
+                        console.log("[Response Type] json");
+
+                        const resJsonObj = JSON.parse(xhr.response);
+
+                        /* 認可Tokenをwindow.sessionStorage(localStorage:5MB)に保存 */
+                        window.sessionStorage['token'] = resJsonObj.token;
+                    }
+                }
+            }
+        };
+        xhr.onerror = (e) => {
+            console.log(xhr.statusText);
+        };
+        xhr.onabort = (e) => {
+            console.log("[Abort]");
+            console.error(e);
+        };
+        xhr.ontimeout = () => {
+            console.log("[Timeout]");
+            console.error(e);
+        };
+
+        // 送信
+        xhr.send(null);
     };
 
     // const handleChangeState = (name: string, e: React.ChangeEvent) => {
@@ -55,18 +100,6 @@ function SNSLogin() {
     const handleSignup = (e: React.MouseEvent<HTMLButtonElement>) => {
         // サインアップ画面に遷移
     };
-
-
-    useLayoutEffect(() => {
-        const XHR = new XMLHttpRequest();
-        XHR.open('GET', userProfile.origin, /*非同期*/true);
-        XHR.withCredentials = true; // Cookieと認証ヘッダーを許可
-        XHR.setRequestHeader('Access-Control-Request-Methods', 'GET');
-        XHR.setRequestHeader('Content-Type', 'application/json');
-        
-    }, []);
-
-    
 
     return (
         <div>
