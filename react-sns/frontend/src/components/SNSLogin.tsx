@@ -31,6 +31,7 @@ function SNSLogin() {
     const [message, setMessage] = useState<string>('');
 
     const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
+
         // クエリ作成
         const urlSearchParams = new URLSearchParams();
         urlSearchParams.append('userid', userProfile.userid);
@@ -54,12 +55,16 @@ function SNSLogin() {
                     // responseType: "blob", "document", "json", "text"
                     if (xhr.responseType == "json") {
                         console.log("[Response Type] json");
-
                         const resJsonObj = JSON.parse(xhr.response);
 
                         /* 認可Tokenをwindow.sessionStorage(localStorage:5MB)に保存 */
-                        window.sessionStorage['token'] = resJsonObj.token;
+                        window.sessionStorage.setItem('token', resJsonObj.token);
                     }
+                    else {
+                        console.log("[Response Type] NOT json");
+                    }
+                } else {
+                    console.log("[Response Status]", xhr.status);
                 }
             }
         };
@@ -78,11 +83,7 @@ function SNSLogin() {
         // 送信
         xhr.send(null);
     };
-
-    // const handleChangeState = (name: string, e: React.ChangeEvent) => {
-
-    // };
-
+   
     const handleChangeUserId = (e: React.ChangeEvent<HTMLInputElement>) => {
         setUserProfile({
             ...userProfile,
@@ -97,8 +98,10 @@ function SNSLogin() {
         });
     };
 
-    const handleSignup = (e: React.MouseEvent<HTMLButtonElement>) => {
-        // サインアップ画面に遷移
+    const handleRedirectSignup = (e: React.MouseEvent<HTMLButtonElement>) => {
+        // サインアップ画面に遷移 (リクエスト)
+        window.location.replace(`${snsServerConfig.origin}/redirect/signup`);
+
     };
 
     return (
@@ -113,7 +116,7 @@ function SNSLogin() {
                 <button onClick={e => handleLogin(e)}>ログイン</button>
                 <br />
                 <p className="login-error">{message}</p>
-                <p><button onClick={e => handleSignup(e)}>Signup</button></p>
+                <p><button onClick={e => handleRedirectSignup(e)}>Signup</button></p>
             </div>
         </div>
     );

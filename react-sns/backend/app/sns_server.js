@@ -101,11 +101,11 @@ app.set('view engine', 'ejs');
 
 // ブラウザのURLリクエストに対して返信(公開)したいhtmlファイル,
 // ディレクトリを指定する. ※ ReactRouterで指定されるURLに対して同じindex.htmlを返すようにする.
-app.use('/', express.static('./public'));
-app.use('/login', express.static('./public'));
-app.use('/signup', express.static('./public'));
-app.use('/users', express.static('./public'));
-app.use('/timeline', express.static('./public'));
+// app.use('/', express.static('./public'));
+// app.use('/login', express.static('./public'));
+// app.use('/signup', express.static('./public'));
+// app.use('/users', express.static('./public'));
+// app.use('/timeline', express.static('./public'));
 
 // ------------------------------------
 const db = require('./db'); // PostgreSQL
@@ -139,6 +139,15 @@ redisClient.once('ready', async () => {
 redisClient.on('error', (e) => {
     console.error(e);
     terminate();
+});
+
+/* ----- リダイレクト ----- */
+app.get('/redirect/signup', async (req, res) => {
+    // リダイレクト先のWebサーバURL
+    const webServerUrl = "http://localhost:3000";
+    const url = path.join(webServerUrl, 'signup');
+    res.redirect(/* Moved Permanently */301, url);
+    console.log(`[Redirect] ${url}`);
 });
 
 
