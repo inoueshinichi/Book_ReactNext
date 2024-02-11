@@ -7,11 +7,23 @@ const allowCrossOrigins = [
 
 // 許可するメソッド
 const allowCrossOriginMethods = [
-    "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"
+    "GET", 
+    "POST", 
+    "PUT", 
+    "DELETE", 
+    "HEAD", 
+    "OPTIONS", 
+    "PATCH", 
+    "CONNECTION"
 ];
 
 // 許可するヘッダー
-const allowCrossOriginHeaders = [
+const allowCrossOriginHeaders = [ 
+    "content-type",
+];
+
+// 公開するヘッダー
+const exposeCrossOriginHeaders = [
     "content-type",
 ];
 
@@ -47,10 +59,12 @@ const allowCORS = function (req, res, next) {
         // Set-Cookie, Set-Cookie2, Authenticationなど
         res.setHeader('Access-Control-Allow-Credentials', allowCrossOriginCredentials);
 
-        // CORS経由でクライント(ブラウザ)のリクエストに設定できるヘッダを指定
-        const acAllowList = [];
+        // CORS経由でクライント(ブラウザ)のリクエストに設定できるメソッド/ヘッダを指定
+        const acAllowMethodList = [];
+        const acAllowHeaderList = [];
 
         // [Preflight Request]
+        // クライアントからサーバ側に許可されているメソッドとヘッダーの確認を取る方式.
         if (req.method === 'OPTIONS') {
             /* 単純でないCORSリクエストの定義 */
             // [GET,POST,HEAD]以外: [PUT,DELETE,CONNECTION,OPTIONS,TRACE,PATCH]
@@ -60,38 +74,59 @@ const allowCORS = function (req, res, next) {
             // [3] Content-Language
             // [4] Content-Type(text/plain,application/x-www-form-encoded,multipart/form-data)
 
-            console.log('[OPTIONS] preflight request about CORS');
-            console.log('--- Setting Specific Response Headers for preflight request ---');
-
             /* [Preflight Response]で以降の通信時に許可するメソッドとヘッダを定義する */
             console.log('[OPTIONS] preflight request about CORS');
             console.log('--- Setting Specific Response Headers for preflight request ---');
 
-            // [1] Access-Control-Allow-Methodsの設定
+            // ポイント: サーバ側の権限でリクエスト許可メソッド/リクエスト許可ヘッダ/レスポンス公開ヘッダを指定する.
+
+            /* ----- [1] Access-Control-Allow-Methodsの設定 ----- */
             // Acces-Control-Allow-Methods(許可メソッド)を設定
-            // Point. サーバ側の権限で許可メソッドを指定する.
-
-            // Access-Control-Request-Methodの確認
+            // 下記はデフォルトで許可されている.
+            // [1] GET
+            // [2] POST
+            // [3] HEAD
+            
             const acrm = req.headers['access-control-request-method'];
-            console.log(`[Access-Control-Request-Method] ${acrm}`);
+            const requestMethodList = acrm.split(',');
+            console.log(`[Access-Control-Request-Method]`, requestMethodList);
+            const acReqMethodList = allowCrossOriginMethods.join(',');
+            for (const allowMethod of allowCrossOriginMethods) {
+                if (acReqMethodList.includes(allowMethod)) {
+                    // 該当すれば設定(Method)
+                    acAllowMethodList.push(allowMethod);
+                }
+            }
+            const acAllowMethods = acAllowMethodList.join(',');
+            console.log('[Access-Control-Allow-Methods', acAllowMethodList)
+            res.setHeader('Access-Control-Allow-Methods', acAllowMethods);
 
-            const acrms = allowCrossOriginMethods.join(',');
-            res.setHeader('Access-Control-Allow-Methods', acrms);
 
-            // [2] Access-Control-Allow-Headersの設定
+            /* ----- [2] Access-Control-Allow-Headersの設定 ----- */
             // 下記はデフォルトで許可されている
             // Accept
             // Accept-Encoding
             // Accept-Language
             // Content-Type(text/plain, application/x-www-form-urlencoded, multipart/form-data)
+
+            // Access-Control-Request-Headersの確認
+            const acrhs = req.headers['access-control-request-headers'];
+            const requestHeaderList = acrhs.split(',');
+            console.log(`[Access-Control-Request-Headers]`, requestHeaderList);
+            const acReqHeaderList = acrhs.split(',');
+
+            // これで本当にあってる？
+            acAllowHeaderList.push("access-control-request-methods");
+            acAllowHeaderList.push("access-control-request-headers");
+
             for (const allowHeader of allowCrossOriginHeaders) {
-                if (acRequestList.includes(allowHeader)) {
-                    // 該当すれば設定
-                    acAllowList.push(allowHeader);
+                if (acReqHeaderList.includes(allowHeader)) {
+                    // 該当すれば設定(Header)
+                    acAllowHeaderList.push(allowHeader);
                 }
             }
-            const acAllowHeaders = acAllowList.join(',');
-            console.log('[Access-Control-Allow-Headers] ', acAllowHeaders);
+            const acAllowHeaders = acAllowHeaderList.join(',');
+            console.log('[Access-Control-Allow-Headers] ', acAllowHeaderList);
             res.setHeader('Access-Control-Allow-Headers', acAllowHeaders);
 
             // [3] Access-Control-Expose-Headerで, ブラウザに対してレスポンスヘッダの読み込み許可を指定する
@@ -102,8 +137,9 @@ const allowCORS = function (req, res, next) {
             // [4] Expires
             // [5] Last-Modified
             // [6] Params
-            console.log('[Access-Control-Expose-Headers', acAllowHeaders);
-            res.setHeader('Access-Control-Expose-Headers', acAllowHeaders);
+            const acExposeHeaders = exposeCrossOriginHeaders.join(',');
+            console.log('[Access-Control-Expose-Headers]', exposeCrossOriginHeaders);
+            res.setHeader('Access-Control-Expose-Headers', acExposeHeaders);
 
             // [4] 再Preflight Requestまでのキャッシュ期限を設定
             res.setHeader('Access-Control-Max-Age', allowCrossOriginMaxAge);
@@ -117,8 +153,8 @@ const allowCORS = function (req, res, next) {
 
         // Access-Control-Allow-HeadersでCORS確立後に
         // ブラウザに送信許可を与えるリクエストヘッダを設定する
-        const acAllowHeaders = acAllowList.join(',');
-        res.setHeader('Access-Control-Allow-Headers', acAllowHeaders);
+        // const acAllowHeaders = acAllowHeaderList.join(',');
+        // res.setHeader('Access-Control-Allow-Headers', acAllowHeaders);
 
     } // if (!(origin == null)) {
 

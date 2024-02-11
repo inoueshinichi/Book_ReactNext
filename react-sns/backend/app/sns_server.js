@@ -22,6 +22,7 @@ const childProcess = require('node:child_process');
 const account = require('./account');
 const cors = require('./cors');
 const config = require('./config');
+const { BadRequest, NotFoundHTML } = require('./errors');
 
 /* ----------- Shutdown Settings ----------- */
 
@@ -142,6 +143,14 @@ redisClient.on('error', (e) => {
 });
 
 /* ----- リダイレクト ----- */
+app.get('/redirect/home', async (req, res) => {
+    // リダイレクト先のWebサーバURL
+    const webServerUrl = "http://localhost:3000";
+    const url = path.join(webServerUrl);
+    res.redirect(/* Moved Permanently */301, url);
+    console.log(`[Redirect] ${url}`);
+});
+
 app.get('/redirect/signup', async (req, res) => {
     // リダイレクト先のWebサーバURL
     const webServerUrl = "http://localhost:3000";
@@ -149,6 +158,8 @@ app.get('/redirect/signup', async (req, res) => {
     res.redirect(/* Moved Permanently */301, url);
     console.log(`[Redirect] ${url}`);
 });
+
+
 
 
 /* ----- APIを定義 ----- */
@@ -267,12 +278,13 @@ app.get('/api/get_allusers', async (req, res) => {
     // クエリ
     const userid = req.query.userid;
     const token = req.query.token;
+    
 
     // 認可
     const isSuccess = await account.checkToken(userid, token);
     if (!isSuccess) {
         console.log('認可トークンエラー');
-        res.json({
+        return res.json({
             status: false,
             msg: '認可トークンエラー'
         });
@@ -282,7 +294,7 @@ app.get('/api/get_allusers', async (req, res) => {
         const userInfoList = await account.getUsers();
         console.log('userInfoList', userInfoList);
         const userIdList = userInfoList.map(userInfo => userInfo.user_id);
-        console.log(`User ID List: ${userIdList}`);
+        console.log('User ID List:', userIdList);
         return res.json({
             status: true,
             userIdList
@@ -367,6 +379,29 @@ app.post('/api/add_timeline', async (req, res) => {
             msg: retComment
         });
     }
+});
+
+// ユーザの友人一覧を取得する
+app.get('/api/get_friends', async (req, res) => {
+    // クエリ
+    const userid = req.query.userid;
+    const token = req.query.token;
+
+    // 認可
+    let isSuccess = await account.checkToken(userid, token);
+    if (!isSuccess) {
+        console.log('認可トークンエラー');
+        res.json({
+            status: false,
+            msg: '認可トークンエラー'
+        });
+    }
+
+    const myFriends = await account.getUserFriends(userid);
+    return res.json({
+        status: true,
+        friends: myFriends
+    });
 });
 
 // // ユーザに友達を追加する

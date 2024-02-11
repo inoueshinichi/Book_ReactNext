@@ -10,6 +10,8 @@ class BadRequest extends Error {
     }
 };
 
+exports.BadRequest = BadRequest;
+
 class NotFoundHTML extends Error {
     constructor(message) {
         super('NotFound');
@@ -17,3 +19,4 @@ class NotFoundHTML extends Error {
     }
 };
 
+exports.NotFoundHTML = NotFoundHTML

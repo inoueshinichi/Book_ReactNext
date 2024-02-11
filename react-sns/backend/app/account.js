@@ -28,7 +28,12 @@ exports.getAuthToken = getAuthToken;
 // 認証トークンの検証
 async function checkToken(userid, token) {
     const userInfo = await getUser(userid);
-    return (userInfo[0].token === token);
+    console.log('userInfo', userInfo);
+    let bRet = false;
+    if (userInfo != null) {
+        bRet = (userInfo[0].token === token);
+    }
+    return bRet;
 }
 exports.checkToken = checkToken;
 
@@ -149,6 +154,28 @@ const addTimeline = async (userid, comment) => {
 };
 exports.addTimeline = addTimeline;
 
+// 友達情報を取得する
+async function getUserFriends(userid) {
+
+    /* 友人の一覧を取得(PostgreDBにアクセス) */
+
+    // 検索
+    const friendsColumn = await db.getClient().any('SELECT friends \
+                                                FROM $1:name \
+                                                WHERE user_id = $2',
+        [db.tablename, userid]);
+
+    console.log('friendsColumn', friendsColumn);
+    const obj = friendsColumn[0];
+    console.log('obj', obj);
+
+    // 友達IDのリスト
+    const friendIds = obj.friends; //Object.entries(obj.friends);
+    return friendIds;
+}
+exports.getUserFriends = getUserFriends;
+
+
 // 友達情報を追加する
 async function addUserFriend(userid, friendid) {
     let retVal = false;
@@ -241,20 +268,8 @@ exports.removeUserFriend = removeUserFriend;
 // // 友達のタイムラインを取得する
 async function getFriendsTimeline(userid, maxNum) {
 
-    /* 友人の一覧を取得(PostgreDBにアクセス) */
-
-    // 検索
-    const friendsColumn = await db.getClient().any('SELECT friends \
-                                                FROM $1:name \
-                                                WHERE user_id = $2',
-        [db.tablename, userid]);
-
-    console.log('friendsColumn', friendsColumn);
-    const obj = friendsColumn[0];
-    console.log('obj', obj);
-
     // 友達IDのリスト
-    const friendIds = Object.entries(obj.friends);
+    const friendIds = await getUserFriends(userid);
     friendIds.push({ [userid]: true}); // 自分も追加
 
     console.log('friendIds', friendIds);
